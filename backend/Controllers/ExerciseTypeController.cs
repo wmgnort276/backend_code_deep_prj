@@ -1,0 +1,42 @@
+﻿using backend.Repository;
+using backend.RequestModel;
+using backend.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
+namespace backend.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ExerciseTypeController : ControllerBase
+    {
+        private readonly IExerciseTypeRepository _service;
+
+        public ExerciseTypeController(IExerciseTypeRepository exerciseTypeService) {
+            _service = exerciseTypeService;
+        }
+
+        [HttpGet]
+        public IActionResult Get()
+        {
+            try
+            {
+                return Ok(_service.GetAll());
+            } catch(Exception ex)
+            {
+                return BadRequest("Failed!");
+            }
+        }
+
+        [HttpPost]
+        public IActionResult Add(ExerciseTypeModel model)
+        {
+            try
+            {
+               return Ok(_service.Add(model));
+            } catch(Exception ex) {
+                return BadRequest("Failed!");
+             }
+        }
+    }
+}
