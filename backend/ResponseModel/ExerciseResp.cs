@@ -19,5 +19,9 @@
         public string ExerciseLevelName { get; set; }
 
         public string ExerciseTypeName { get; set; }
+
+        public string HintCode { get; set; }
+
+        public float TimeLimit { get; set; }
     }
 }

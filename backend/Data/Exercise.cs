@@ -27,5 +27,10 @@ namespace backend.Data
 
         [ForeignKey("ExerciseTypeId")]
         public ExerciseType ExerciseType { get; set; }
+
+        [Required]
+        public string HintCode { get; set; }
+
+        public float TimeLimit { get; set; }
     }
 }

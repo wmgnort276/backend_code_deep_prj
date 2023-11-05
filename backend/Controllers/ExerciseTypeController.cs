@@ -21,7 +21,11 @@ namespace backend.Controllers
         {
             try
             {
-                return Ok(_service.GetAll());
+                return Ok( new ResponseModel.Response { 
+                    Status = "200",
+                    Message = "Success",
+                    Data = _service.GetAll()
+                });
             } catch(Exception ex)
             {
                 return BadRequest("Failed!");

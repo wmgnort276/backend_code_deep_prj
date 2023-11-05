@@ -1,4 +1,6 @@
-﻿using backend.RequestModel;
+﻿using backend.Data;
+using backend.RequestModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
@@ -9,12 +11,13 @@ namespace backend.Controllers
     [ApiController]
     public class CompileCodeController : ControllerBase
     {
+        [Authorize]
         [HttpPost]
         public IActionResult Create(SourceCode example)
         {
 
             var cppCode = example.Code;
-            string fileName = "example"; // Tạo tên tệp tin ngẫu nhiên để tránh xung đột tên tệp tin
+            string fileName = "example12"; // Tạo tên tệp tin ngẫu nhiên để tránh xung đột tên tệp tin
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName + ".cpp"); // Đường dẫn đến tệp tin cpp
             string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory(), fileName); // Đường dẫn đến tệp thực thi
             Console.WriteLine("File path:  " + compiledFilePath);
@@ -44,7 +47,7 @@ namespace backend.Controllers
                 }
 
                 // Thực thi tệp thực thi và nhận kết quả
-                string executionResult;
+                string executionResult = string.Empty;
 
                 ProcessStartInfo executionProcessStartInfo = new ProcessStartInfo
                 {
@@ -54,19 +57,39 @@ namespace backend.Controllers
                     CreateNoWindow = true
                 };
 
+                //using (Process executionProcess = new Process())
+                //{
+                //    executionProcess.StartInfo = executionProcessStartInfo;
+                //    executionProcess.Start();
+                //    executionResult = executionProcess.StandardOutput.ReadToEnd();
+                //    executionProcess.WaitForExit();
+                //}
+
                 using (Process executionProcess = new Process())
                 {
                     executionProcess.StartInfo = executionProcessStartInfo;
-                    executionProcess.Start();
-                    executionResult = executionProcess.StandardOutput.ReadToEnd();
-                    executionProcess.WaitForExit();
+                    // Use task to run the execution process
+                    var task = Task.Run(() =>
+                    {
+                        executionProcess.Start();
+                        executionResult = executionProcess.StandardOutput.ReadToEnd();
+                        // executionProcess.WaitForExit(); => no need to do not wait the process
+                    });
+
+                    var completed = task.Wait(TimeSpan.FromSeconds(5));
+
+                    if (!completed)
+                    {
+                        // Nếu quá thời gian, throw ra ngoại lệ và xử lý tương ứng
+                        throw new TimeoutException("Execution timed out.");
+                    }
                 }
 
-                return Ok(executionResult);
+                    return Ok(executionResult);
             }
             catch (Exception ex)
             {
-                return BadRequest("Compile fail");
+                return BadRequest("Compile fail!");
             }
             finally
             {
@@ -78,7 +101,14 @@ namespace backend.Controllers
 
                 if (System.IO.File.Exists(compiledFilePath + ".exe"))
                 {
+                    foreach (var process in Process.GetProcessesByName(fileName))
+                    {
+                        process.Kill();
+                        process.WaitForExit();
+                    }
+
                     System.IO.File.Delete(compiledFilePath + ".exe");
+
                 }
             }
 

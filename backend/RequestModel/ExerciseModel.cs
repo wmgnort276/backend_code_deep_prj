@@ -13,5 +13,9 @@ namespace backend.RequestModel
         public int ExerciseLevelId { get; set; }
 
         public int ExerciseTypeId { get; set; }
+
+        public string HintCode { get; set; }
+
+        public float TimeLimit { get; set; }
     }
 }

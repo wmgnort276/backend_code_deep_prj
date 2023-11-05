@@ -7,10 +7,12 @@ namespace backend.Repository
     {
         List<ExerciseResp> All(int pageIndex = 1, int pageSize = 5);
 
-        ExerciseResp? GetById(Guid id);
+        ExerciseResp? GetById(Guid id, string userId);
 
         ExerciseResp Add(ExerciseModel model,byte[] file);
 
         byte[]? DownLoadrunFille(Guid id);
+
+        string Submit(Guid id, string userId, SourceCode example);
     }
 }

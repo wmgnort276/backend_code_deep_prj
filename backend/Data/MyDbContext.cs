@@ -22,6 +22,7 @@ namespace backend.Data
             {
                 exercise.Property(ex => ex.CreatedAt)
                 .HasDefaultValueSql("getutcdate()");
+                exercise.Property(ex => ex.HintCode).HasDefaultValue("");
             });
         }
     }

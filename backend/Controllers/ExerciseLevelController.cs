@@ -27,7 +27,7 @@ namespace backend.Controllers
                     Score = item.Score,
                 }).ToList();
 
-                return Ok(exerciseLevels);
+                return Ok(new Response { Status = "200", Message = "Success", Data = exerciseLevels });
 
             } catch (Exception ex)
             {

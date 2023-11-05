@@ -1,8 +1,11 @@
-﻿using backend.Repository;
+﻿using backend.Data;
+using backend.Repository;
 using backend.RequestModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using System.Security.Claims;
 
 namespace backend.Controllers
 {
@@ -15,6 +18,7 @@ namespace backend.Controllers
             _services = repository;
         }
 
+        [Authorize(Roles = UserRoles.Admin)]
         [HttpPost]
         public IActionResult Add([FromForm] ExerciseModel model)
         {
@@ -26,7 +30,9 @@ namespace backend.Controllers
                     Name = model.Name,
                     Description = model.Description,
                     ExerciseLevelId = model.ExerciseLevelId,
-                    ExerciseTypeId = model.ExerciseTypeId
+                    ExerciseTypeId = model.ExerciseTypeId,
+                    HintCode = model.HintCode,
+                    TimeLimit = model.TimeLimit,
                 };
                 if (model.File != null && model.File.Length > 0)
                 {
@@ -46,13 +52,14 @@ namespace backend.Controllers
             }
         }
 
-
+        [Authorize]
         [HttpGet("{id}")]
         public IActionResult GetById(Guid id)
         {   
             try
             {
-                return Ok(_services.GetById(id));
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                return Ok(new ResponseModel.Response { Status = "200", Message = "Success", Data = _services.GetById(id, userId) });
             } catch (Exception ex)
             {
                 return BadRequest("Get fail");
@@ -83,6 +90,20 @@ namespace backend.Controllers
             {
                 return Ok(_services.All());
             } catch (Exception ex) {
+                return BadRequest("Fail to get exercise!");
+            }
+        }
+
+        [HttpPost("submit")]
+        public IActionResult SubmitCode(Guid id, SourceCode sourceCode)
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                return Ok(_services.Submit(id, userId, sourceCode));
+            }
+            catch (Exception ex)
+            {
                 return BadRequest("Fail to get exercise!");
             }
         }
