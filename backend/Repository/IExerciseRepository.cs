@@ -14,5 +14,7 @@ namespace backend.Repository
         byte[]? DownLoadrunFille(Guid id);
 
         string Submit(Guid id, string userId, SourceCode example);
+
+        ExerciseResp Edit(ExerciseModel model, byte[] file);
     }
 }

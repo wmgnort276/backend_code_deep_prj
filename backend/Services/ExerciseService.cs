@@ -84,6 +84,7 @@ namespace backend.Services
                     ExerciseLevelName = exercise.ExerciseLevel.Name,
                     ExerciseTypeName = exercise.ExerciseType.Name,
                     HintCode = exercise.HintCode,
+                    TimeLimit = exercise.TimeLimit,
                 };
             }
 
@@ -112,9 +113,11 @@ namespace backend.Services
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName + ".cpp"); // Đường dẫn đến tệp tin cpp
             string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
 
+            // Thực thi tệp thực thi và nhận kết quả
+            string executionResult = string.Empty;
+            var exercise = _dbContext.Exercises.SingleOrDefault(item => item.Id == id);
             try
             {
-               var exercise = _dbContext.Exercises.SingleOrDefault(item => item.Id == id);
                File.WriteAllBytes(filePath, exercise.RunFile);
 
                string[] lines = File.ReadAllLines(filePath);
@@ -144,8 +147,6 @@ namespace backend.Services
                     compileProcess.WaitForExit();
                 }
 
-                // Thực thi tệp thực thi và nhận kết quả
-                string executionResult = string.Empty;
 
                 ProcessStartInfo executionProcessStartInfo = new ProcessStartInfo
                 {
@@ -180,10 +181,20 @@ namespace backend.Services
             }
             catch (Exception ex)
             {
-                return "False";
+                return "0";
             }
             finally
             {
+                // when the answer is right, update data to submission table
+                var submission = new SubmissionModel
+                {
+                    Status = (executionResult == "1"),
+                    StudentId = userId,
+                    ExerciseId = exercise.Id,
+                };
+
+                AddSubmission(submission);
+
                 // Xóa các tệp tin tạm thời
                 if (System.IO.File.Exists(filePath))
                 {
@@ -204,6 +215,54 @@ namespace backend.Services
             }
 
             throw new NotImplementedException();
+        }
+
+        public ExerciseResp Edit(ExerciseModel model, byte[] file)
+        {
+            var exercise = _dbContext.Exercises.SingleOrDefault(item => item.Id == model.Id);
+            if(exercise == null)
+            {
+                throw new Exception("Not found");
+            }
+
+            exercise.Name = model.Name;
+            exercise.Description = model.Description;
+            exercise.ExerciseLevelId = model.ExerciseLevelId;
+            exercise.ExerciseTypeId = model.ExerciseTypeId;
+            exercise.HintCode = model.HintCode;
+            exercise.TimeLimit = model.TimeLimit;
+            exercise.RunFile = file;
+            _dbContext.SaveChanges();
+
+            return new ExerciseResp
+            {
+                Name = exercise.Name,
+                Description = exercise.Description,
+                ExerciseLevelId = exercise.ExerciseLevelId,
+                ExerciseTypeId = exercise.ExerciseTypeId,
+                HintCode = exercise.HintCode,
+                TimeLimit = exercise.TimeLimit
+            };
+        }
+
+        public SubmissionResp AddSubmission(SubmissionModel model)
+        {
+            var newSubmission = new Submission
+            {
+                Status = model.Status,
+                StudentId = model.StudentId,
+                ExerciseId = model.ExerciseId,
+            };
+
+            _dbContext.Add(newSubmission);
+            _dbContext.SaveChanges();
+
+            return new SubmissionResp
+            {
+                Status = newSubmission.Status,
+                StudentId = newSubmission.StudentId,
+                ExerciseId = newSubmission.ExerciseId
+            };
         }
     }
 }

@@ -15,6 +15,9 @@ namespace backend.Data
         public DbSet<ExerciseLevel> ExerciseLevels { get; set; }
 
         public DbSet<Exercise> Exercises { get; set; }
+
+        public DbSet<Submission> Submissions { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -23,6 +26,12 @@ namespace backend.Data
                 exercise.Property(ex => ex.CreatedAt)
                 .HasDefaultValueSql("getutcdate()");
                 exercise.Property(ex => ex.HintCode).HasDefaultValue("");
+            });
+
+            modelBuilder.Entity<Submission>(sub =>
+            {
+                sub.Property(item => item.CreatedAt)
+                .HasDefaultValueSql("getutcdate()");
             });
         }
     }

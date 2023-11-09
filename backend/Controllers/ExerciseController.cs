@@ -1,6 +1,7 @@
 ﻿using backend.Data;
 using backend.Repository;
 using backend.RequestModel;
+using backend.ResponseModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -100,11 +101,42 @@ namespace backend.Controllers
             try
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                return Ok(_services.Submit(id, userId, sourceCode));
+                var result = _services.Submit(id, userId, sourceCode);
+               
+                return Ok(new Response
+                {
+                    Status = "200",
+                    Message = result == "1" ? "Success" : "Fail",
+                    Data = result
+                });
             }
             catch (Exception ex)
             {
                 return BadRequest("Fail to get exercise!");
+            }
+        }
+
+       
+        [HttpPost("edit")]
+        public IActionResult Edit([FromForm] ExerciseModel model)
+        {
+            try
+            {
+                if (model.File != null && model.File.Length > 0)
+                {
+                    using var memoryStream = new MemoryStream();
+                    model.File.CopyTo(memoryStream);
+                    var fileData = memoryStream.ToArray();
+                    return Ok(new Response { Status = "200", Message = "Success" , Data = _services.Edit(model, fileData)});
+                }
+                else
+                {
+                    return BadRequest("File data not be null");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Create failed");
             }
         }
     }

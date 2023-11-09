@@ -46,6 +46,7 @@ namespace backend.Controllers
                 UserName = model.Username
             };
             var result = await userManager.CreateAsync(user, model.Password);
+            await userManager.AddToRoleAsync(user, UserRoles.User);
 
             if (!result.Succeeded)
                 return StatusCode(StatusCodes.Status500InternalServerError,
@@ -125,6 +126,33 @@ namespace backend.Controllers
             }
 
             return Ok(new Response { Status = "Success", Message = "User created successfully!" });
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> GetUSer()
+        {
+            var userName = User.FindFirst(ClaimTypes.Name)?.Value;
+            var user = await userManager.FindByNameAsync(userName);
+
+            if (user != null)
+            {
+                var userRoles = await userManager.GetRolesAsync(user);
+                var userResp = new UserResp
+                {
+                    Id = user.Id,
+                    Role = userRoles,
+                    UerName = user.UserName,
+                };
+
+                return Ok(new Response
+                {
+                    Status = "200",
+                    Message = "success",
+                    Data = userResp
+                });
+            }
+            return Unauthorized();
         }
 
     }
