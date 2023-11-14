@@ -23,5 +23,7 @@
         public string HintCode { get; set; }
 
         public float TimeLimit { get; set; }
+
+        public int Score { get; set; }
     }
 }

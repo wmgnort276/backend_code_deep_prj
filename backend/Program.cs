@@ -70,6 +70,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<IExerciseTypeRepository, ExerciseTypeService>();
 builder.Services.AddScoped<IExerciseRepository, ExerciseService>();
 builder.Services.AddScoped<ISubmissionRepository, SubmissionService>();
+builder.Services.AddScoped<IUserRepository, UserService>();
 
 var app = builder.Build();
 

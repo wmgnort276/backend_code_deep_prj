@@ -7,5 +7,7 @@
         public string UerName { get; set; }
 
         public IList<String> Role { get; set; }
+
+        public int Score { get; set; }
     }
 }

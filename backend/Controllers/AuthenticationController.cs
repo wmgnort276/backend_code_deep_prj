@@ -143,6 +143,7 @@ namespace backend.Controllers
                     Id = user.Id,
                     Role = userRoles,
                     UerName = user.UserName,
+                    Score = user.Score,
                 };
 
                 return Ok(new Response

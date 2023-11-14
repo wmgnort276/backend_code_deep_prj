@@ -18,6 +18,9 @@ namespace backend.Services
         }
         public ExerciseResp Add(ExerciseModel model, byte[] file)
         {
+
+          var exerciseLevels = _dbContext.ExerciseLevels.SingleOrDefault(item => item.Id == model.ExerciseLevelId);
+
           var newExercise = new Exercise
            {
              Name = model.Name,
@@ -29,6 +32,7 @@ namespace backend.Services
              RunFile = file,
              HintCode = model.HintCode,
              TimeLimit = model.TimeLimit,
+             Score = (exerciseLevels?.Score != null) ? exerciseLevels.Score : 0
           };
 
             _dbContext.Exercises.Add(newExercise);
@@ -110,12 +114,14 @@ namespace backend.Services
             var cppCode = sourceCode.Code;
             string fileName = string.Concat("source", userId);
 
-            string filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName + ".cpp"); // Đường dẫn đến tệp tin cpp
+            string filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName + ".cpp");
             string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
 
-            // Thực thi tệp thực thi và nhận kết quả
             string executionResult = string.Empty;
             var exercise = _dbContext.Exercises.SingleOrDefault(item => item.Id == id);
+
+            var isFirstSubmit = CheckUserFirstSubmit(userId, exercise.Id);
+
             try
             {
                File.WriteAllBytes(filePath, exercise.RunFile);
@@ -124,11 +130,11 @@ namespace backend.Services
 
                 if (lines.Length >= 6)
                 {
-                    lines[5] = cppCode; // Gán nội dung mới vào dòng thứ 10 (chỉ số 9 trong mảng)
-                    File.WriteAllLines(filePath, lines); // Ghi lại toàn bộ nội dung file từ mảng dòng đã thay đổi
+                    lines[5] = cppCode;
+                    File.WriteAllLines(filePath, lines);
                 }
 
-                string compilerPath = "g++"; // Đường dẫn đến trình biên dịch g++
+                string compilerPath = "g++"; 
                 string arguments = $"{filePath} -o {compiledFilePath}";
 
                 ProcessStartInfo compileProcessStartInfo = new ProcessStartInfo
@@ -171,7 +177,6 @@ namespace backend.Services
 
                     if (!completed)
                     {
-                        // Nếu quá thời gian, throw ra ngoại lệ và xử lý tương ứng
                         throw new TimeoutException("Execution timed out.");
                     }
                 }
@@ -194,8 +199,13 @@ namespace backend.Services
                 };
 
                 AddSubmission(submission);
+                
+                // Update user score only it is the first time user submit 
+                if(executionResult == "1" && isFirstSubmit)
+                {
+                    AddUserScore(userId, exercise.Score);
+                }
 
-                // Xóa các tệp tin tạm thời
                 if (System.IO.File.Exists(filePath))
                 {
                     System.IO.File.Delete(filePath);
@@ -217,9 +227,12 @@ namespace backend.Services
             throw new NotImplementedException();
         }
 
-        public ExerciseResp Edit(ExerciseModel model, byte[] file)
+        public ExerciseResp Edit(ExerciseModel model, byte[]? file)
         {
+            // TODO: only level change then we find exercise level
+            var exerciseLevels = _dbContext.ExerciseLevels.SingleOrDefault(item => item.Id == model.ExerciseLevelId);
             var exercise = _dbContext.Exercises.SingleOrDefault(item => item.Id == model.Id);
+
             if(exercise == null)
             {
                 throw new Exception("Not found");
@@ -231,7 +244,12 @@ namespace backend.Services
             exercise.ExerciseTypeId = model.ExerciseTypeId;
             exercise.HintCode = model.HintCode;
             exercise.TimeLimit = model.TimeLimit;
-            exercise.RunFile = file;
+            exercise.Score = (exerciseLevels?.Score != null) ? exerciseLevels.Score : 0;
+
+            if (file != null)
+            {
+                exercise.RunFile = file;
+            }
             _dbContext.SaveChanges();
 
             return new ExerciseResp
@@ -263,6 +281,27 @@ namespace backend.Services
                 StudentId = newSubmission.StudentId,
                 ExerciseId = newSubmission.ExerciseId
             };
+        }
+
+        public void AddUserScore(string userId, int score)
+        {
+
+             var currentUser = _dbContext.Users.SingleOrDefault(item => item.Id == userId);
+             currentUser.Score += score;
+             _dbContext.SaveChanges();
+           
+        }
+
+        public bool CheckUserFirstSubmit(string userId, Guid exerciseId)
+        {
+            var submissionFount = _dbContext.Submissions
+                .Where(item => item.StudentId == userId && item.ExerciseId == exerciseId && item.Status).ToList();
+            if(submissionFount != null && submissionFount.Count() > 0)
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }

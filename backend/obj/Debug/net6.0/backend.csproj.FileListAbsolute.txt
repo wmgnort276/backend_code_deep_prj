@@ -72,3 +72,5 @@ C:\Users\DELL\learn_net_core\backend\backend\bin\Debug\net6.0\Microsoft.AspNetCo
 C:\Users\DELL\learn_net_core\backend\backend\bin\Debug\net6.0\Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
 C:\Users\DELL\learn_net_core\backend\backend\bin\Debug\net6.0\Microsoft.Extensions.Identity.Core.dll
 C:\Users\DELL\learn_net_core\backend\backend\bin\Debug\net6.0\Microsoft.Extensions.Identity.Stores.dll
+C:\Users\DELL\learn_net_core\backend\backend\bin\Debug\net6.0\Docker.DotNet.dll
+C:\Users\DELL\learn_net_core\backend\backend\bin\Debug\net6.0\Newtonsoft.Json.dll

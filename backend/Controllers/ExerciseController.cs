@@ -116,13 +116,13 @@ namespace backend.Controllers
             }
         }
 
-       
+        [Authorize(Roles = UserRoles.Admin)]
         [HttpPost("edit")]
         public IActionResult Edit([FromForm] ExerciseModel model)
         {
             try
             {
-                if (model.File != null && model.File.Length > 0)
+                if (model?.File != null && model?.File?.Length > 0)
                 {
                     using var memoryStream = new MemoryStream();
                     model.File.CopyTo(memoryStream);
@@ -131,7 +131,7 @@ namespace backend.Controllers
                 }
                 else
                 {
-                    return BadRequest("File data not be null");
+                    return Ok(new Response { Status = "200", Message = "Success", Data = _services.Edit(model, null) });
                 }
             }
             catch (Exception ex)

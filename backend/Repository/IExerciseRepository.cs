@@ -15,6 +15,6 @@ namespace backend.Repository
 
         string Submit(Guid id, string userId, SourceCode example);
 
-        ExerciseResp Edit(ExerciseModel model, byte[] file);
+        ExerciseResp Edit(ExerciseModel model, byte[]? file);
     }
 }

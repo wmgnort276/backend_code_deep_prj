@@ -8,5 +8,7 @@ namespace backend.Data
     public class Users : IdentityUser
     {
         public int Age { get; set; }
+
+        public int Score { get; set; }
     }
 }
