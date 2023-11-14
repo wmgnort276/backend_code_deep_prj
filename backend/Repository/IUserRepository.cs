@@ -6,5 +6,6 @@ namespace backend.Repository
     {
         public List<SubmissionResp> GetUserResolveExercises(string userId);
         public List<SubmissionResp> GetUserSubmitExercises(string userId);
+
     }
 }
