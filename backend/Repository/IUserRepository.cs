@@ -4,6 +4,7 @@ namespace backend.Repository
 {
     public interface IUserRepository
     {
-        public List<SubmissionResp> GetUserExercise(string userId);
+        public List<SubmissionResp> GetUserResolveExercises(string userId);
+        public List<SubmissionResp> GetUserSubmitExercises(string userId);
     }
 }

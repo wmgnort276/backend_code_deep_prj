@@ -11,5 +11,9 @@
         public string StudentId { get; set; }
 
         public Guid ExerciseId { get; set; }
+
+        public string exerciseName { get; set; }
+
+        public string exerciseLevelName { get; set;}
     }
 }

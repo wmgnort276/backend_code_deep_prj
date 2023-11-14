@@ -142,7 +142,7 @@ namespace backend.Controllers
                 {
                     Id = user.Id,
                     Role = userRoles,
-                    UerName = user.UserName,
+                    UserName = user.UserName,
                     Score = user.Score,
                 };
 
