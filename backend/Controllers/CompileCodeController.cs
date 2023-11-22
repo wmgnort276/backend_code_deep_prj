@@ -23,17 +23,15 @@ namespace backend.Controllers
         public IActionResult Create(SourceCode example)
         {
             var cppCode = example.Code;
-            string fileName = "example12"; // Tạo tên tệp tin ngẫu nhiên để tránh xung đột tên tệp tin
-            string filePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox", fileName + ".cpp"); // Đường dẫn đến tệp tin cpp
-            string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox", fileName); // Đường dẫn đến tệp thực thi
+            string fileName = "example12"; 
+            string filePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox", fileName + ".cpp");
+            string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox", fileName);
             Console.WriteLine("File path:  " + compiledFilePath);
             try
             {
-                // Ghi mã nguồn C++ vào tệp tin
                 System.IO.File.WriteAllText(filePath, cppCode);
 
-                // Biên dịch tệp tin cpp thành tệp thực thi
-                string compilerPath = "g++"; // Đường dẫn đến trình biên dịch g++
+                string compilerPath = "g++"; 
                 string arguments = $"{filePath} -o {compiledFilePath}";
 
                 ProcessStartInfo compileProcessStartInfo = new ProcessStartInfo
@@ -52,7 +50,6 @@ namespace backend.Controllers
                     compileProcess.WaitForExit();
                 }
 
-                // Thực thi tệp thực thi và nhận kết quả
                 string executionResult = string.Empty;
 
                 ProcessStartInfo executionProcessStartInfo = new ProcessStartInfo
@@ -70,13 +67,7 @@ namespace backend.Controllers
                     // executionProcess.MaxWorkingSet = new IntPtr(3 * 1024 * 1024);
                     Console.WriteLine(executionProcess.PrivateMemorySize64);
                     
-                    bool isProcessStop = executionProcess.WaitForExit(9000);
-
-                    do
-                    {
-                        Console.WriteLine("helllo");
-                    } while (!isProcessStop);
-
+                    bool isProcessStop = executionProcess.WaitForExit(10000);
 
                     if (!isProcessStop)
                     {
