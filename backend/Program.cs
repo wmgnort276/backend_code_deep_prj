@@ -71,6 +71,7 @@ builder.Services.AddScoped<IExerciseTypeRepository, ExerciseTypeService>();
 builder.Services.AddScoped<IExerciseRepository, ExerciseService>();
 builder.Services.AddScoped<ISubmissionRepository, SubmissionService>();
 builder.Services.AddScoped<IUserRepository, UserService>();
+builder.Services.AddScoped<ICommentRepository, CommentService>();
 
 var app = builder.Build();
 

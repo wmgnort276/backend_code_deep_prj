@@ -29,41 +29,6 @@ namespace backend.Controllers
             Console.WriteLine("File path:  " + compiledFilePath);
             try
             {
-                // config docker
-                // var client = new DockerClientConfiguration().CreateClient();
-                // var containerConfig = new CreateContainerParameters
-                //{
-                //    Image = "my-running-image",
-                //    Name = "my-container-name",
-                //    // Add any additional configuration options here
-                //};
-
-                //var containerCreateResponse = client.Containers.CreateContainerAsync(containerConfig).Result;
-
-                //var containerStartResponse = client.Containers.StartContainerAsync(containerCreateResponse.ID, 
-                //    new ContainerStartParameters()).Result;
-
-                //if (containerStartResponse)
-                //{
-                //    var logsStream = client.Containers.GetContainerLogsAsync(containerCreateResponse.ID, 
-                //        new ContainerLogsParameters { ShowStdout = true, ShowStderr = true }).Result;
-
-                //    using (var reader = new StreamReader(logsStream, Encoding.UTF8))
-                //    {
-                //        StringBuilder logsBuilder = new StringBuilder();
-                //        byte[] buffer = new byte[4096];
-                //        int bytesRead;
-                //        while ((bytesRead = reader.BaseStream.Read(buffer, 0, buffer.Length)) > 0)
-                //        {
-                //            string logs = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                //            logsBuilder.Append(logs);
-                //        }
-
-                //        string logsResult = logsBuilder.ToString();
-                //        Console.WriteLine("Container logs:\n" + logsResult);
-                //    }
-                //}
-
                 // Ghi mã nguồn C++ vào tệp tin
                 System.IO.File.WriteAllText(filePath, cppCode);
 
@@ -98,38 +63,55 @@ namespace backend.Controllers
                     CreateNoWindow = true
                 };
 
-                //using (Process executionProcess = new Process())
-                //{
-                //    executionProcess.StartInfo = executionProcessStartInfo;
-                //    executionProcess.Start();
-                //    executionResult = executionProcess.StandardOutput.ReadToEnd();
-                //    executionProcess.WaitForExit();
-                //}
-
                 using (Process executionProcess = new Process())
                 {
                     executionProcess.StartInfo = executionProcessStartInfo;
-                    // Use task to run the execution process
-                    var task = Task.Run(() =>
-                    {
-                        executionProcess.Start();
-                        executionResult = executionProcess.StandardOutput.ReadToEnd();
-                        // executionProcess.WaitForExit(); => no need to do not wait the process
-                    });
+                    executionProcess.Start();
+                    // executionProcess.MaxWorkingSet = new IntPtr(3 * 1024 * 1024);
+                    Console.WriteLine(executionProcess.PrivateMemorySize64);
+                    
+                    bool isProcessStop = executionProcess.WaitForExit(9000);
 
-                    var completed = task.Wait(TimeSpan.FromSeconds(5));
-
-                    if (!completed)
+                    do
                     {
-                        // Nếu quá thời gian, throw ra ngoại lệ và xử lý tương ứng
-                        throw new TimeoutException("Execution timed out.");
+                        Console.WriteLine("helllo");
+                    } while (!isProcessStop);
+
+
+                    if (!isProcessStop)
+                    {
+                        Console.WriteLine("Not finish yet!");
+                        throw new TimeoutException("Execution timed out");
                     }
+
+                    executionResult = executionProcess.StandardOutput.ReadToEnd();
                 }
 
-                    return Ok(executionResult);
+                //using (Process executionProcess = new Process())
+                //{
+                //    executionProcess.StartInfo = executionProcessStartInfo;
+                //    // Use task to run the execution process
+                //    long memUsed = 0;
+                //    int i = 0;
+                //    var task = Task.Run(() =>
+                //    {
+                //        executionProcess.Start();
+                //        executionResult = executionProcess.StandardOutput.ReadToEnd();
+                //    });
+
+                //    var completed = task.Wait(TimeSpan.FromSeconds(6));
+
+                //    if (!completed)
+                //    {
+                //        throw new TimeoutException("Execution timed out.");
+                //    }
+                //}
+
+                return Ok(executionResult);
             }
             catch (Exception ex)
             {
+                Console.WriteLine("Error compile code : " + ex);
                 return BadRequest("Compile fail!");
             }
             finally

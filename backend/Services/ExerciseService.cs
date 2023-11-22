@@ -169,7 +169,7 @@ namespace backend.Services
                     var task = Task.Run(() =>
                     {
                         executionProcess.Start();
-                        executionResult = executionProcess.StandardOutput.ReadToEnd();
+                        executionResult = executionProcess.StandardOutput.ReadToEnd();                       
                         // executionProcess.WaitForExit(); => no need to do not wait the process
                     });
 
@@ -186,6 +186,7 @@ namespace backend.Services
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex);
                 return "0";
             }
             finally
@@ -219,7 +220,7 @@ namespace backend.Services
                         process.WaitForExit();
                     }
 
-                    System.IO.File.Delete(compiledFilePath + ".exe");
+                   System.IO.File.Delete(compiledFilePath + ".exe");
 
                 }
             }
