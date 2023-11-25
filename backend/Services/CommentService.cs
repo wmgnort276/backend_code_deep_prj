@@ -14,11 +14,11 @@ namespace backend.Services
             _dbContext = dbContext;
         }
 
-        public CommentResp CreateComment(CommentModel comment)
+        public CommentResp CreateComment(CommentModel comment, string userId)
         {
             var newComment = new Comment
             {
-                UserId = comment.UserId,
+                UserId = userId,
                 Content = comment.Content,
                 ExerciseId = comment.ExerciseId,
                 Upvote = 0,

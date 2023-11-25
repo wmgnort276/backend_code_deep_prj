@@ -7,7 +7,7 @@ namespace backend.Repository
     {
         List<CommentResp> GetComments(Guid ExerciseId);
 
-        CommentResp CreateComment(CommentModel commet);
+        CommentResp CreateComment(CommentModel commet, string userId);
 
         CommentResp UpdateComment(CommentResp comment);
 

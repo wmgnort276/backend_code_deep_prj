@@ -11,7 +11,7 @@ namespace backend.Data
 
         public string UserId { get; set; }
 
-        [ForeignKey("userId")]
+        [ForeignKey("UserId")]
         public Users Users { get; set; }
 
         public string Content {  get; set; }

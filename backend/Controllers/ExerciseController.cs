@@ -85,11 +85,11 @@ namespace backend.Controllers
         }
 
         [HttpGet]
-        public IActionResult Exercises()
+        public IActionResult Exercises(int? exerciseLevelId, int? exerciseTypeId, string? keyword, int? pageIndex, int? pageSize)
         {
             try
             {
-                return Ok(_services.All());
+                return Ok(_services.All(exerciseLevelId, exerciseTypeId, keyword, pageIndex, pageSize));
             } catch (Exception ex) {
                 return BadRequest("Fail to get exercise!");
             }

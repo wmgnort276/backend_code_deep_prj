@@ -50,10 +50,20 @@ namespace backend.Services
             // throw new NotImplementedException();
         }
 
-        public List<ExerciseResp> All(int pageIndex = 1, int pageSize = 5)
+        public List<ExerciseResp> All(int? exerciseLevelId, int? exerciseTypeId, string? keyword, int? pageIndex = 1, int? pageSize = 5)
         {
             var exercises = _dbContext.Exercises.Include(item => item.ExerciseLevel)
                     .Include(item => item.ExerciseType).AsQueryable();
+
+            if (exerciseTypeId != null)
+            {
+                exercises = exercises.Where(item => item.ExerciseTypeId == exerciseTypeId);
+            }
+
+            if(!string.IsNullOrEmpty(keyword))
+            {
+                exercises = exercises.Where(item => item.Description.Contains(keyword));
+            }
 
             //var result = PaginatedList<Exercise>.Create(exercises, pageIndex, pageSize);
             return exercises.Select(item => new ExerciseResp

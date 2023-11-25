@@ -23,12 +23,11 @@ namespace backend.Controllers
             try
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (userId != null)
+                if(userId == null)
                 {
-                    comment.UserId = userId;
+                    throw new Exception("Not found user!");
                 }
-
-                _service.CreateComment(comment);
+                _service.CreateComment(comment, userId);
                 return Ok("Comment created");
             } catch (Exception ex)
             {

@@ -23,7 +23,7 @@ namespace backend.Controllers
         public IActionResult Create(SourceCode example)
         {
             var cppCode = example.Code;
-            string fileName = "example12"; 
+            string fileName = Guid.NewGuid().ToString(); 
             string filePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox", fileName + ".cpp");
             string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox", fileName);
             Console.WriteLine("File path:  " + compiledFilePath);
@@ -68,6 +68,7 @@ namespace backend.Controllers
                     Console.WriteLine(executionProcess.PrivateMemorySize64);
                     
                     bool isProcessStop = executionProcess.WaitForExit(10000);
+                    // clockstart
 
                     if (!isProcessStop)
                     {
@@ -107,7 +108,6 @@ namespace backend.Controllers
             }
             finally
             {
-                // Xóa các tệp tin tạm thời
                 if (System.IO.File.Exists(filePath))
                 {
                     System.IO.File.Delete(filePath);
@@ -145,23 +145,35 @@ CMD [""./app""]";
 
             var _dockerClient = new DockerClientConfiguration().CreateClient();
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            //var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             // Currently using as image-tag
-            var fileId = userId;
+            var fileId = Guid.NewGuid().ToString();
             try
             {
                 var sourceCode = example.Code;
-                string cppFilePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox", fileId + ".cpp");
+
+                // create new folder 
+                string folderPath = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox", fileId);
+                if (!Directory.Exists(folderPath))
+                {
+                    Directory.CreateDirectory(folderPath);
+                } else
+                {
+                    return BadRequest("Error");
+                }
+
+                string cppFilePath = Path.Combine(folderPath, fileId + ".cpp");
+
                 await System.IO.File.WriteAllTextAsync(cppFilePath, sourceCode);
 
                 // Add file cpp to docker image for building
                 var dockerfileContent = string.Format(DockerfileTemplate, $"{fileId}.cpp");
 
                 // Create file path for docker file
-                var dockerfilePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox", "Dockerfile");
+                var dockerfilePath = Path.Combine(folderPath, "Dockerfile");
                 await System.IO.File.WriteAllTextAsync(dockerfilePath, dockerfileContent);
 
-                var testDomain = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox");
+                var testDomain = Path.Combine(folderPath);
 
                 var processStartInfo = new ProcessStartInfo
                 {
