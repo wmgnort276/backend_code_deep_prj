@@ -5,6 +5,7 @@ using backend.ResponseModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using System;
 using System.Diagnostics;
 
 namespace backend.Services
@@ -120,18 +121,23 @@ namespace backend.Services
 
         public string Submit(Guid id, string userId, SourceCode sourceCode)
         {
-            float DEFAULT_TIME_LIMIT = 5;
+            int DEFAULT_TIME_LIMIT = 10000;
             var cppCode = sourceCode.Code;
-            string fileName = string.Concat("source", userId);
+            string fileName = Guid.NewGuid().ToString();
 
-            string filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName + ".cpp");
-            string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
+            string filePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox2", fileName + ".cpp");
+            string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox2", fileName);
 
             string executionResult = string.Empty;
+            int limitTime = 0;
+            int runTime = 0;
+            int memory = 0;
             var exercise = _dbContext.Exercises.SingleOrDefault(item => item.Id == id);
-
+            if(exercise != null)
+            {
+                limitTime = exercise.TimeLimit;
+            }
             var isFirstSubmit = CheckUserFirstSubmit(userId, exercise.Id);
-
             try
             {
                File.WriteAllBytes(filePath, exercise.RunFile);
@@ -174,21 +180,27 @@ namespace backend.Services
 
                 using (Process executionProcess = new Process())
                 {
+                    var startTime = DateTime.Now;
                     executionProcess.StartInfo = executionProcessStartInfo;
-                    // Use task to run the execution process
-                    var task = Task.Run(() =>
-                    {
-                        executionProcess.Start();
-                        executionResult = executionProcess.StandardOutput.ReadToEnd();                       
-                        // executionProcess.WaitForExit(); => no need to do not wait the process
-                    });
+                    executionProcess.Start();
 
-                    var completed = task.Wait(TimeSpan.FromSeconds((exercise.TimeLimit > 0.0) ? exercise.TimeLimit : DEFAULT_TIME_LIMIT));
-
-                    if (!completed)
+                    while (!executionProcess.HasExited)
                     {
-                        throw new TimeoutException("Execution timed out.");
+                        executionProcess.Refresh();
+                        memory = (int)executionProcess.PrivateMemorySize64;
                     }
+
+                    // TODO: change the time waiting
+                    bool isProcessStop = executionProcess.WaitForExit((limitTime > 0) ? limitTime : DEFAULT_TIME_LIMIT);
+
+                    if (!isProcessStop)
+                    {
+                        Console.WriteLine("Not finish yet!");
+                        throw new TimeoutException("Execution timed out");
+                    }
+
+                    executionResult = executionProcess.StandardOutput.ReadToEnd();
+                    runTime = (int)(executionProcess.ExitTime - startTime).TotalMilliseconds;
                 }
 
                 return executionResult;
@@ -201,12 +213,15 @@ namespace backend.Services
             }
             finally
             {
+                Console.WriteLine("Memory: " + memory);
                 // when the answer is right, update data to submission table
                 var submission = new SubmissionModel
                 {
                     Status = (executionResult == "1"),
                     StudentId = userId,
                     ExerciseId = exercise.Id,
+                    Runtime = runTime,
+                    Memory = memory,
                 };
 
                 AddSubmission(submission);
@@ -230,7 +245,7 @@ namespace backend.Services
                         process.WaitForExit();
                     }
 
-                   System.IO.File.Delete(compiledFilePath + ".exe");
+                    System.IO.File.Delete(compiledFilePath + ".exe");
 
                 }
             }
@@ -270,7 +285,7 @@ namespace backend.Services
                 ExerciseLevelId = exercise.ExerciseLevelId,
                 ExerciseTypeId = exercise.ExerciseTypeId,
                 HintCode = exercise.HintCode,
-                TimeLimit = exercise.TimeLimit
+                TimeLimit = exercise.TimeLimit,
             };
         }
 
@@ -281,6 +296,8 @@ namespace backend.Services
                 Status = model.Status,
                 StudentId = model.StudentId,
                 ExerciseId = model.ExerciseId,
+                Runtime = model.Runtime,
+                Memory = model.Memory,
             };
 
             _dbContext.Add(newSubmission);
@@ -297,6 +314,7 @@ namespace backend.Services
         public void AddUserScore(string userId, int score)
         {
 
+            // To do check if first submission
              var currentUser = _dbContext.Users.SingleOrDefault(item => item.Id == userId);
              currentUser.Score += score;
              _dbContext.SaveChanges();

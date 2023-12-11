@@ -46,6 +46,8 @@ namespace backend.Services
                 ExerciseId = item.ExerciseId,
                 CreatedAt = item.CreatedAt,
                 Status = item.Status,
+                Runtime = item.Runtime,
+                Memory = item.Memory,
             }).ToList();
             
             throw new NotImplementedException();

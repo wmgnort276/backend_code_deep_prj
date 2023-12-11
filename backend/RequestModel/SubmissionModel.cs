@@ -14,5 +14,9 @@ namespace backend.RequestModel
         public string StudentId { get; set; }
 
         public Guid ExerciseId { get; set; }
+
+        public int Memory { get; set; }
+
+        public int Runtime { get; set; }
     }
 }

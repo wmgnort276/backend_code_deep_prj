@@ -22,5 +22,9 @@ namespace backend.Data
         public string StudentId { get; set; }
 
         public Guid ExerciseId { get; set; }
+
+        public int Memory { get; set; }
+
+        public int Runtime { get; set; }
     }
 }

@@ -24,8 +24,8 @@ namespace backend.Controllers
         {
             var cppCode = example.Code;
             string fileName = Guid.NewGuid().ToString(); 
-            string filePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox", fileName + ".cpp");
-            string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox", fileName);
+            string filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName + ".cpp");
+            string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
             Console.WriteLine("File path:  " + compiledFilePath);
             try
             {
@@ -62,14 +62,16 @@ namespace backend.Controllers
 
                 using (Process executionProcess = new Process())
                 {
+                    var timeStart = DateTime.Now;
                     executionProcess.StartInfo = executionProcessStartInfo;
                     executionProcess.Start();
                     // executionProcess.MaxWorkingSet = new IntPtr(3 * 1024 * 1024);
-                    Console.WriteLine(executionProcess.PrivateMemorySize64);
+                    // Console.WriteLine(executionProcess.PrivateMemorySize64);
                     
                     bool isProcessStop = executionProcess.WaitForExit(10000);
+                   
                     // clockstart
-                        
+                    
                     if (!isProcessStop)
                     {
                         Console.WriteLine("Not finish yet!");
@@ -77,6 +79,8 @@ namespace backend.Controllers
                     }
 
                     executionResult = executionProcess.StandardOutput.ReadToEnd();
+                    Console.WriteLine("Time running" + timeStart);
+                    Console.WriteLine("Time running" + (int)(executionProcess.ExitTime - timeStart).TotalMilliseconds);
                 }
 
                 //using (Process executionProcess = new Process())
@@ -104,7 +108,7 @@ namespace backend.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine("Error compile code : " + ex);
-                return BadRequest("Compile fail!");
+                return BadRequest("Compile fail!" + ex);
             }
             finally
             {
