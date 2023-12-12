@@ -89,7 +89,8 @@ namespace backend.Controllers
         {
             try
             {
-                return Ok(_services.All(exerciseLevelId, exerciseTypeId, keyword, pageIndex, pageSize));
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                return Ok(_services.All(userId ?? "", exerciseLevelId, exerciseTypeId, keyword, pageIndex, pageSize));
             } catch (Exception ex) {
                 return BadRequest("Fail to get exercise!");
             }

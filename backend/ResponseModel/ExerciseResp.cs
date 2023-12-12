@@ -25,5 +25,7 @@
         public float TimeLimit { get; set; }
 
         public int Score { get; set; }
+
+        public bool IsResolved { get; set; }
     }
 }

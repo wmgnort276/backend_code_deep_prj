@@ -5,7 +5,7 @@ namespace backend.Repository
 {
     public interface IExerciseRepository
     {
-        List<ExerciseResp> All(int? exerciseLevelId, int? exerciseTypeId, string? keyword, int? pageIndex = 1, int? pageSize = 5);
+        List<ExerciseResp> All(string userId, int? exerciseLevelId, int? exerciseTypeId, string? keyword, int? pageIndex = 1, int? pageSize = 5);
 
         ExerciseResp? GetById(Guid id, string userId);
 

@@ -51,19 +51,26 @@ namespace backend.Services
             // throw new NotImplementedException();
         }
 
-        public List<ExerciseResp> All(int? exerciseLevelId, int? exerciseTypeId, string? keyword, int? pageIndex = 1, int? pageSize = 5)
+        public List<ExerciseResp> All(string userId, int? exerciseLevelId, int? exerciseTypeId, string? keyword, int? pageIndex = 1, int? pageSize = 5)
         {
             var exercises = _dbContext.Exercises.Include(item => item.ExerciseLevel)
-                    .Include(item => item.ExerciseType).AsQueryable();
+                    .Include(item => item.ExerciseType)
+                    .Include(item => item.Submissions)
+                    .AsQueryable();
 
             if (exerciseTypeId != null)
             {
                 exercises = exercises.Where(item => item.ExerciseTypeId == exerciseTypeId);
             }
 
-            if(!string.IsNullOrEmpty(keyword))
+            if (exerciseLevelId != null)
             {
-                exercises = exercises.Where(item => item.Description.Contains(keyword));
+                exercises = exercises.Where(item => item.ExerciseLevelId == exerciseLevelId);
+            }
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                exercises = exercises.Where(item => item.Name.ToLower().Contains(keyword.ToLower()));
             }
 
             //var result = PaginatedList<Exercise>.Create(exercises, pageIndex, pageSize);
@@ -76,6 +83,7 @@ namespace backend.Services
                 ExerciseTypeId=item.ExerciseTypeId,
                 ExerciseLevelName = item.ExerciseLevel.Name,
                 ExerciseTypeName = item.ExerciseType.Name,
+                IsResolved = item.Submissions.Any(s => s.ExerciseId == item.Id && s.StudentId == userId && s.Status),
             }).ToList();
 
             //   throw new NotImplementedException();

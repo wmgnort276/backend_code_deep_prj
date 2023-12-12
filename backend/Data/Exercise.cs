@@ -34,5 +34,7 @@ namespace backend.Data
         public int TimeLimit { get; set; }
 
         public int Score { get; set; }
+
+        public virtual ICollection<Submission> Submissions { get; set; }
     }
 }
