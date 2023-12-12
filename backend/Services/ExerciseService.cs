@@ -183,12 +183,17 @@ namespace backend.Services
                     var startTime = DateTime.Now;
                     executionProcess.StartInfo = executionProcessStartInfo;
                     executionProcess.Start();
+                    memory = (int)executionProcess.PrivateMemorySize64;
 
-                    while (!executionProcess.HasExited)
+                    var task = Task.Run(() =>
                     {
-                        executionProcess.Refresh();
-                        memory = (int)executionProcess.PrivateMemorySize64;
-                    }
+                        while (!executionProcess.HasExited)
+                        {
+                            memory = (int)executionProcess.PrivateMemorySize64;
+                            executionProcess.Refresh();
+                        }
+                    });
+
 
                     // TODO: change the time waiting
                     bool isProcessStop = executionProcess.WaitForExit((limitTime > 0) ? limitTime : DEFAULT_TIME_LIMIT);
