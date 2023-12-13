@@ -2,6 +2,7 @@
 using backend.Repository;
 using backend.RequestModel;
 using backend.ResponseModel;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.Services
 {
@@ -46,6 +47,7 @@ namespace backend.Services
         public List<CommentResp> GetComments(Guid ExerciseId)
         {
             var listComments = _dbContext.Comments
+                .Include(item => item.Users)
                 .Where(item => item.ExerciseId == ExerciseId)
                 .OrderByDescending(item => item.CreatedAt)
                 .AsQueryable();
@@ -55,8 +57,10 @@ namespace backend.Services
                 UserId = item.UserId,
                 Content = item.Content,
                 ExerciseId = item.ExerciseId,
+                Username = item.Users.UserName,
                 Upvote = 0,
                 Downvote = 0,
+                CreatedAt = item.CreatedAt
             }).ToList();
             throw new NotImplementedException();
         }

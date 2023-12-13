@@ -103,12 +103,12 @@ namespace backend.Controllers
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var result = _services.Submit(id, userId, sourceCode);
-               
+
                 return Ok(new Response
                 {
                     Status = "200",
                     Message = result == "1" ? "Success" : "Fail",
-                    Data = result
+                    Data = result == "1" ? "Success" : result
                 });
             }
             catch (Exception ex)

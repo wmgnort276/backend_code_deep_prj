@@ -136,7 +136,10 @@ namespace backend.Services
             string filePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox2", fileName + ".cpp");
             string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox2", fileName);
 
+            string compileResult = string.Empty;
             string executionResult = string.Empty;
+            string errorExecutionResult = string.Empty;
+
             int limitTime = 0;
             int runTime = 0;
             int memory = 0;
@@ -152,9 +155,9 @@ namespace backend.Services
 
                string[] lines = File.ReadAllLines(filePath);
 
-                if (lines.Length >= 6)
+                if (lines.Length >= 8)
                 {
-                    lines[5] = cppCode;
+                    lines[7] = cppCode;
                     File.WriteAllLines(filePath, lines);
                 }
 
@@ -167,7 +170,8 @@ namespace backend.Services
                     Arguments = arguments,
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
-                    CreateNoWindow = true
+                    CreateNoWindow = true,
+                    RedirectStandardError = true,
                 };
 
                 using (Process compileProcess = new Process())
@@ -175,6 +179,13 @@ namespace backend.Services
                     compileProcess.StartInfo = compileProcessStartInfo;
                     compileProcess.Start();
                     compileProcess.WaitForExit();
+                    compileResult = compileProcess.StandardError.ReadToEnd();
+                    // compile code error
+                }
+                if(!string.IsNullOrEmpty(compileResult))
+                {
+                    string cleanedErrorOutput = compileResult.Replace($"{filePath}:", "");
+                    throw new Exception(cleanedErrorOutput);
                 }
 
 
@@ -183,7 +194,8 @@ namespace backend.Services
                     FileName = compiledFilePath,
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
-                    CreateNoWindow = true
+                    CreateNoWindow = true,
+                    RedirectStandardError = true,
                 };
 
                 using (Process executionProcess = new Process())
@@ -213,6 +225,7 @@ namespace backend.Services
                     }
 
                     executionResult = executionProcess.StandardOutput.ReadToEnd();
+                    errorExecutionResult = executionProcess.StandardError.ReadToEnd();
                     runTime = (int)(executionProcess.ExitTime - startTime).TotalMilliseconds;
                 }
 
@@ -222,7 +235,7 @@ namespace backend.Services
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                return "0";
+                return ex.Message;
             }
             finally
             {
