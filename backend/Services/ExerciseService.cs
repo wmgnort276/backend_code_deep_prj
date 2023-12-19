@@ -92,10 +92,22 @@ namespace backend.Services
         public ExerciseResp? GetById(Guid id, string userId)
         {
             var exercise = _dbContext.Exercises.Include(item => item.ExerciseLevel)
-                    .Include(item => item.ExerciseType).SingleOrDefault(item => item.Id == id);
+                    .Include(item => item.ExerciseType)
+                    .SingleOrDefault(item => item.Id == id);
+
 
             if (exercise != null)
             {
+                var ratings = _dbContext.Rating.Where(rating => rating.ExerciseId == id)
+                    .ToList();
+                double averageRating = 0;
+                int ratingCount = 0;
+                if(ratings.Any())
+                {
+                    averageRating = ratings.Average(item => item.RatingValue);
+                    ratingCount = ratings.Count();
+                }
+
                 return new ExerciseResp
                 {
                     Id = exercise.Id,
@@ -108,6 +120,8 @@ namespace backend.Services
                     ExerciseTypeName = exercise.ExerciseType.Name,
                     HintCode = exercise.HintCode,
                     TimeLimit = exercise.TimeLimit,
+                    RatingCount = ratingCount,
+                    Rating = averageRating,
                 };
             }
 
@@ -200,8 +214,13 @@ namespace backend.Services
 
                 using (Process executionProcess = new Process())
                 {
+                    // TODO: use Stopwatch to calculate time running instead
                     var startTime = DateTime.Now;
+                    Stopwatch stopwatch = new Stopwatch();
                     executionProcess.StartInfo = executionProcessStartInfo;
+
+                    // Start watiching process
+                    stopwatch.Start();
                     executionProcess.Start();
                     memory = (int)executionProcess.PrivateMemorySize64;
 
@@ -217,6 +236,8 @@ namespace backend.Services
 
                     // TODO: change the time waiting
                     bool isProcessStop = executionProcess.WaitForExit((limitTime > 0) ? limitTime : DEFAULT_TIME_LIMIT);
+                    stopwatch.Stop();
+                    runTime = (int)stopwatch.ElapsedMilliseconds;
 
                     if (!isProcessStop)
                     {
@@ -226,7 +247,7 @@ namespace backend.Services
 
                     executionResult = executionProcess.StandardOutput.ReadToEnd();
                     errorExecutionResult = executionProcess.StandardError.ReadToEnd();
-                    runTime = (int)(executionProcess.ExitTime - startTime).TotalMilliseconds;
+                    // runTime = (int)(executionProcess.ExitTime - startTime).TotalMilliseconds;
                 }
 
                 return executionResult;

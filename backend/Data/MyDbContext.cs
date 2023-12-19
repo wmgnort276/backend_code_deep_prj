@@ -20,6 +20,8 @@ namespace backend.Data
 
         public DbSet<Comment> Comments { get; set; }
 
+        public DbSet<Rating> Rating { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -46,6 +48,11 @@ namespace backend.Data
 
                 comment.Property(item => item.Downvote)
                         .HasDefaultValue(0);
+            });
+
+            modelBuilder.Entity<Rating>(rating =>
+            {
+                rating.Property(item => item.CreatedAt).HasDefaultValueSql("getutcdate()");
             });
             
         }

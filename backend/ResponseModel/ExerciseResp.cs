@@ -1,4 +1,6 @@
-﻿namespace backend.ResponseModel
+﻿using backend.Data;
+
+namespace backend.ResponseModel
 {
     public class ExerciseResp
     {
@@ -27,5 +29,9 @@
         public int Score { get; set; }
 
         public bool IsResolved { get; set; }
+
+        public double Rating { get; set; }
+
+        public int RatingCount { get; set; }
     }
 }

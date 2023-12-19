@@ -35,6 +35,7 @@ namespace backend.Data
 
         public int Score { get; set; }
 
-        public virtual ICollection<Submission> Submissions { get; set; }
+        public virtual ICollection<Submission>? Submissions { get; set; }
+
     }
 }

@@ -72,6 +72,7 @@ builder.Services.AddScoped<IExerciseRepository, ExerciseService>();
 builder.Services.AddScoped<ISubmissionRepository, SubmissionService>();
 builder.Services.AddScoped<IUserRepository, UserService>();
 builder.Services.AddScoped<ICommentRepository, CommentService>();
+builder.Services.AddScoped<IRatingRepository, RatingService>();
 
 var app = builder.Build();
 
@@ -84,7 +85,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(MyAllowSpecificOrigins);
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 app.UseAuthentication();
 

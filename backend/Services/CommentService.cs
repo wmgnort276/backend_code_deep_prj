@@ -17,6 +17,9 @@ namespace backend.Services
 
         public CommentResp CreateComment(CommentModel comment, string userId)
         {
+            var exerciseFound = _dbContext.Exercises.SingleOrDefault(item => item.Id == comment.ExerciseId)
+                ?? throw new Exception("Exercise not found!");
+
             var newComment = new Comment
             {
                 UserId = userId,
@@ -62,7 +65,6 @@ namespace backend.Services
                 Downvote = 0,
                 CreatedAt = item.CreatedAt
             }).ToList();
-            throw new NotImplementedException();
         }
 
         public CommentResp UpdateComment(CommentResp comment)
