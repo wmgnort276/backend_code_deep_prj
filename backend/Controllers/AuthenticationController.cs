@@ -132,28 +132,35 @@ namespace backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetUSer()
         {
-            var userName = User.FindFirst(ClaimTypes.Name)?.Value;
-            var user = await userManager.FindByNameAsync(userName);
-
-            if (user != null)
+            try
             {
-                var userRoles = await userManager.GetRolesAsync(user);
-                var userResp = new UserResp
-                {
-                    Id = user.Id,
-                    Role = userRoles,
-                    UserName = user.UserName,
-                    Score = user.Score,
-                };
+                var userName = User.FindFirst(ClaimTypes.Name)?.Value;
+                var user = await userManager.FindByNameAsync(userName);
 
-                return Ok(new Response
+                if (user != null)
                 {
-                    Status = "200",
-                    Message = "success",
-                    Data = userResp
-                });
+                    var userRoles = await userManager.GetRolesAsync(user);
+                    var userResp = new UserResp
+                    {
+                        Id = user.Id,
+                        Role = userRoles,
+                        UserName = user.UserName,
+                        Score = user.Score,
+                    };
+
+                    return Ok(new Response
+                    {
+                        Status = "200",
+                        Message = "success",
+                        Data = userResp
+                    });
+                }
+                return Unauthorized();
+
+            } catch (Exception ex)
+            {
+                return BadRequest("User not found!");
             }
-            return Unauthorized();
         }
 
     }

@@ -281,7 +281,7 @@ namespace backend.Services
 
                 if (System.IO.File.Exists(filePath))
                 {
-                    System.IO.File.Delete(filePath);
+                    // System.IO.File.Delete(filePath);
                 }
 
                 if (System.IO.File.Exists(compiledFilePath + ".exe"))
