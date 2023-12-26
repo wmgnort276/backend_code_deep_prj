@@ -33,14 +33,15 @@ namespace backend.Controllers
 
                 string compilerPath = "g++"; 
                 string arguments = $"{filePath} -o {compiledFilePath}";
-
+                string compileResult = string.Empty;
                 ProcessStartInfo compileProcessStartInfo = new ProcessStartInfo
                 {
                     FileName = compilerPath,
                     Arguments = arguments,
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
-                    CreateNoWindow = true
+                    CreateNoWindow = true,
+                    RedirectStandardError = true,
                 };
 
                 using (Process compileProcess = new Process())
@@ -48,6 +49,12 @@ namespace backend.Controllers
                     compileProcess.StartInfo = compileProcessStartInfo;
                     compileProcess.Start();
                     compileProcess.WaitForExit();
+                    compileResult = compileProcess.StandardError.ReadToEnd();
+                }
+                if (!string.IsNullOrEmpty(compileResult))
+                {
+                    string cleanedErrorOutput = compileResult.Replace($"{filePath}:", "");
+                    throw new Exception(cleanedErrorOutput);
                 }
 
                 string executionResult = string.Empty;
@@ -108,7 +115,7 @@ namespace backend.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine("Error compile code : " + ex);
-                return BadRequest("Compile fail!" + ex);
+                return BadRequest(ex.Message);
             }
             finally
             {

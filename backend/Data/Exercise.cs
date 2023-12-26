@@ -14,6 +14,8 @@ namespace backend.Data
 
         public byte[] RunFile { get; set; }
 
+        public byte[] RunFileJava { get; set; }
+
         public DateTime CreatedAt { get; set; }
 
         public DateTime ModifiedAt { get; set; }
@@ -30,6 +32,8 @@ namespace backend.Data
 
         [Required]
         public string HintCode { get; set; }
+
+        public string HintCodeJava { get; set; }
 
         public int TimeLimit { get; set; }
 

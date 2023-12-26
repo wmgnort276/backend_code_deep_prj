@@ -16,8 +16,11 @@
 
         public string exerciseLevelName { get; set;}
 
+        public string exerciseTypeName { get; set; }
+
         public int Memory { get; set; }
 
         public int Runtime { get; set; }
+
     }
 }

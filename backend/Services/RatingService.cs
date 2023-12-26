@@ -18,21 +18,38 @@ namespace backend.Services
             // Find if exercise exist
             var exerciseFound = _dbContext.Exercises.SingleOrDefault(item => item.Id == rating.ExerciseId) 
                 ?? throw new Exception("Exercise not found!");
-            var ratingModel = new Rating
-            {
-                UserId = userId,
-                CreatedAt = new DateTime(),
-                RatingValue = rating.RatingValue,
-                ExerciseId = rating.ExerciseId,
-            };
 
-            _dbContext.Add(ratingModel);
-            _dbContext.SaveChanges();
-            return new RatingResp
+            // Find if user has already rating current exercise
+            var ratingFound = _dbContext.Rating.SingleOrDefault(item => item.UserId == userId 
+                                                            && item.ExerciseId == exerciseFound.Id);
+            if (ratingFound != null)
             {
-                RatingValue = ratingModel.RatingValue,
-                ExerciseId = ratingModel.ExerciseId,
-            };
+                ratingFound.RatingValue = rating.RatingValue;
+                ratingFound.UpdatedAt = new DateTime();
+                _dbContext.SaveChanges();
+                return new RatingResp
+                {
+                    RatingValue = rating.RatingValue,
+                    ExerciseId = exerciseFound.Id,
+                };
+            } else
+            {
+                var ratingModel = new Rating
+                {
+                    UserId = userId,
+                    CreatedAt = new DateTime(),
+                    RatingValue = rating.RatingValue,
+                    ExerciseId = rating.ExerciseId,
+                };
+
+                _dbContext.Add(ratingModel);
+                _dbContext.SaveChanges();
+                return new RatingResp
+                {
+                    RatingValue = ratingModel.RatingValue,
+                    ExerciseId = ratingModel.ExerciseId,
+                };
+            }
         }
 
         public RatingResp UpdateRating(string userId, RatingModel rating)

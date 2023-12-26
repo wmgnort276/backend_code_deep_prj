@@ -17,6 +17,7 @@ namespace backend.Services
             var userSubmissions = _dbContext.Submissions
                 .Include(item => item.Exercise)
                 .Include(item => item.Exercise.ExerciseLevel)
+                .Include(item => item.Exercise.ExerciseType)
                 .Where(item => item.StudentId == userId && item.Status)
                 .AsEnumerable()
                 .DistinctBy(item => item.ExerciseId)
@@ -24,12 +25,14 @@ namespace backend.Services
 
             return userSubmissions.Select(item => new SubmissionResp
             {
+                Id = item.Id,
                 StudentId = item.StudentId,
                 Status = item.Status,
                 CreatedAt = item.CreatedAt,
                 ExerciseId = item.ExerciseId,
                 exerciseName = item.Exercise.Name,
                 exerciseLevelName = item.Exercise.ExerciseLevel.Name,
+                exerciseTypeName = item.Exercise.ExerciseType.Name,
             }).ToList();
         }
 
