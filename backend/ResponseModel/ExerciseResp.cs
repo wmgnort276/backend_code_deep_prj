@@ -24,6 +24,8 @@ namespace backend.ResponseModel
 
         public string HintCode { get; set; }
 
+        public string HintCodeJava { get; set; }
+
         public float TimeLimit { get; set; }
 
         public int Score { get; set; }

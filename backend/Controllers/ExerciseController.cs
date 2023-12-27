@@ -35,12 +35,17 @@ namespace backend.Controllers
                     HintCode = model.HintCode,
                     TimeLimit = model.TimeLimit,
                 };
-                if (model.File != null && model.File.Length > 0)
+                if (model.File != null && model.File.Length > 0 && model.FileJava != null && model.FileJava.Length > 0)
                 {
                     using var memoryStream = new MemoryStream();
                     model.File.CopyTo(memoryStream);
                     var fileData = memoryStream.ToArray();
-                    return CreatedAtAction(nameof(Add), _services.Add(newExerciseModel, fileData));
+
+                    using var memoryStreamJava = new MemoryStream();
+                    model.FileJava.CopyTo(memoryStreamJava);
+                    var fileDataJava = memoryStream.ToArray();
+
+                    return CreatedAtAction(nameof(Add), _services.Add(newExerciseModel, fileData, fileDataJava));
                 }
                 else
                 {
@@ -123,21 +128,26 @@ namespace backend.Controllers
         {
             try
             {
-                if (model?.File != null && model?.File?.Length > 0)
+                if (model?.File != null && model?.File?.Length > 0 || model?.FileJava != null && model?.FileJava?.Length > 0)
                 {
                     using var memoryStream = new MemoryStream();
                     model.File.CopyTo(memoryStream);
                     var fileData = memoryStream.ToArray();
-                    return Ok(new Response { Status = "200", Message = "Success" , Data = _services.Edit(model, fileData)});
+
+                    using var memoryStreamJava = new MemoryStream();
+                    model.FileJava.CopyTo(memoryStreamJava);
+                    var fileDataJava = memoryStreamJava.ToArray();
+
+                    return Ok(new Response { Status = "200", Message = "Success" , Data = _services.Edit(model, fileData, fileDataJava)});
                 }
                 else
                 {
-                    return Ok(new Response { Status = "200", Message = "Success", Data = _services.Edit(model, null) });
+                    return Ok(new Response { Status = "200", Message = "Success", Data = _services.Edit(model, null, null) });
                 }
             }
             catch (Exception ex)
             {
-                return BadRequest("Create failed");
+                return BadRequest("Create failed" + ex.Message);
             }
         }
     }

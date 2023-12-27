@@ -9,12 +9,12 @@ namespace backend.Repository
 
         ExerciseResp? GetById(Guid id, string userId);
 
-        ExerciseResp Add(ExerciseModel model,byte[] file);
+        ExerciseResp Add(ExerciseModel model,byte[] file, byte[] fileJava);
 
         byte[]? DownLoadrunFille(Guid id);
 
         string Submit(Guid id, string userId, SourceCode example);
 
-        ExerciseResp Edit(ExerciseModel model, byte[]? file);
+        ExerciseResp Edit(ExerciseModel model, byte[]? file, byte[]? fileJava);
     }
 }

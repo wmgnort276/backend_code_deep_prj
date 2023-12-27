@@ -11,11 +11,15 @@ namespace backend.RequestModel
 
         public IFormFile? File { get; set; }
 
+        public IFormFile? FileJava { get; set; }
+
         public int ExerciseLevelId { get; set; }
 
         public int ExerciseTypeId { get; set; }
 
         public string HintCode { get; set; }
+
+        public string HintCodeJava { get; set; }
 
         public int TimeLimit { get; set; }
     }

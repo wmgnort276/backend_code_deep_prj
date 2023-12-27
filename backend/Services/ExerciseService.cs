@@ -17,7 +17,7 @@ namespace backend.Services
         public ExerciseService(MyDbContext dbContext) {
             _dbContext = dbContext;
         }
-        public ExerciseResp Add(ExerciseModel model, byte[] file)
+        public ExerciseResp Add(ExerciseModel model, byte[] file, byte[] fileJava)
         {
 
           var exerciseLevels = _dbContext.ExerciseLevels.SingleOrDefault(item => item.Id == model.ExerciseLevelId);
@@ -119,6 +119,7 @@ namespace backend.Services
                     ExerciseLevelName = exercise.ExerciseLevel.Name,
                     ExerciseTypeName = exercise.ExerciseType.Name,
                     HintCode = exercise.HintCode,
+                    HintCodeJava = exercise.HintCodeJava,
                     TimeLimit = exercise.TimeLimit,
                     RatingCount = ratingCount,
                     Rating = averageRating,
@@ -144,11 +145,11 @@ namespace backend.Services
         public string Submit(Guid id, string userId, SourceCode sourceCode)
         {
             int DEFAULT_TIME_LIMIT = 10000;
-            var cppCode = sourceCode.Code;
-            string fileName = Guid.NewGuid().ToString();
+            var code = sourceCode.Code;
+            string fileName = Guid.NewGuid().ToString().Replace("-", ""); ;
 
-            string filePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox2", fileName + ".cpp");
-            string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Sandbox2", fileName);
+            string filePath = string.Empty;
+            string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
 
             string compileResult = string.Empty;
             string executionResult = string.Empty;
@@ -163,40 +164,28 @@ namespace backend.Services
                 limitTime = exercise.TimeLimit;
             }
             var isFirstSubmit = CheckUserFirstSubmit(userId, exercise.Id);
+
             try
             {
-               File.WriteAllBytes(filePath, exercise.RunFile);
+                string program = string.Empty;
+                string arguments = string.Empty;
 
-               string[] lines = File.ReadAllLines(filePath);
-
-                if (lines.Length >= 8)
+                if (sourceCode.Lang == "C++")
                 {
-                    lines[7] = cppCode;
-                    File.WriteAllLines(filePath, lines);
+                  filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName + ".cpp");
+                  program = "g++";
+                  arguments = $"{filePath} -o {compiledFilePath}";
+                  compileResult = CompileCppCode(filePath, exercise.RunFile, code, program, arguments);
+                } else
+                {
+                  filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName + ".java");
+                  program = "javac";
+                  arguments = $"{filePath}";
+                  compileResult = CompileJavaCode(filePath, exercise.RunFileJava, code, program, arguments, fileName);
+                  compiledFilePath = Directory.GetCurrentDirectory();
                 }
 
-                string compilerPath = "g++"; 
-                string arguments = $"{filePath} -o {compiledFilePath}";
-
-                ProcessStartInfo compileProcessStartInfo = new ProcessStartInfo
-                {
-                    FileName = compilerPath,
-                    Arguments = arguments,
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardError = true,
-                };
-
-                using (Process compileProcess = new Process())
-                {
-                    compileProcess.StartInfo = compileProcessStartInfo;
-                    compileProcess.Start();
-                    compileProcess.WaitForExit();
-                    compileResult = compileProcess.StandardError.ReadToEnd();
-                    // compile code error
-                }
-                if(!string.IsNullOrEmpty(compileResult))
+                if (!string.IsNullOrEmpty(compileResult))
                 {
                     string cleanedErrorOutput = compileResult.Replace($"{filePath}:", "");
                     throw new Exception(cleanedErrorOutput);
@@ -212,12 +201,22 @@ namespace backend.Services
                     RedirectStandardError = true,
                 };
 
+                ProcessStartInfo executionJavaProcessStartInfo = new ProcessStartInfo
+                {
+                    FileName = "java",
+                    Arguments = $"-cp {compiledFilePath} Main{fileName}",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardError = true,
+                };
+
                 using (Process executionProcess = new Process())
                 {
                     // TODO: use Stopwatch to calculate time running instead
                     var startTime = DateTime.Now;
                     Stopwatch stopwatch = new Stopwatch();
-                    executionProcess.StartInfo = executionProcessStartInfo;
+                    executionProcess.StartInfo = (sourceCode.Lang == "C++") ? executionProcessStartInfo : executionJavaProcessStartInfo;
 
                     // Start watiching process
                     stopwatch.Start();
@@ -295,12 +294,23 @@ namespace backend.Services
                     System.IO.File.Delete(compiledFilePath + ".exe");
 
                 }
+
+                if (System.IO.File.Exists(Path.Combine(compiledFilePath, $"Main{fileName}.class")))
+                {
+                    try
+                    {
+                      System.IO.File.Delete(Path.Combine(compiledFilePath, $"Main{fileName}.class"));
+                    } catch(Exception ex)
+                    {
+                        Console.WriteLine("error delete file!");
+                    }
+                }
             }
 
             throw new NotImplementedException();
         }
 
-        public ExerciseResp Edit(ExerciseModel model, byte[]? file)
+        public ExerciseResp Edit(ExerciseModel model, byte[]? file, byte[]? fileJava)
         {
             // TODO: only level change then we find exercise level
             var exerciseLevels = _dbContext.ExerciseLevels.SingleOrDefault(item => item.Id == model.ExerciseLevelId);
@@ -316,12 +326,17 @@ namespace backend.Services
             exercise.ExerciseLevelId = model.ExerciseLevelId;
             exercise.ExerciseTypeId = model.ExerciseTypeId;
             exercise.HintCode = model.HintCode;
+            exercise.HintCodeJava = model.HintCodeJava;
             exercise.TimeLimit = model.TimeLimit;
             exercise.Score = (exerciseLevels?.Score != null) ? exerciseLevels.Score : 0;
 
             if (file != null)
             {
                 exercise.RunFile = file;
+            }
+            if (fileJava != null)
+            {
+                exercise.RunFileJava = fileJava;
             }
             _dbContext.SaveChanges();
 
@@ -378,6 +393,82 @@ namespace backend.Services
             }
 
             return true;
+        }
+
+        public string CompileCppCode(string filePath, byte[] runfile, string souceCode, string program, string arguments)
+        {
+            File.WriteAllBytes(filePath, runfile);
+
+            string[] lines = File.ReadAllLines(filePath);
+
+            if (lines.Length >= 8)
+            {
+                lines[7] = souceCode;
+                File.WriteAllLines(filePath, lines);
+            }
+
+            string compileOutput = string.Empty;
+
+            ProcessStartInfo compileProcessStartInfo = new ProcessStartInfo
+            {
+                FileName = program,
+                Arguments = arguments,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardError = true,
+            };
+
+            using (Process compileProcess = new Process())
+            {
+                compileProcess.StartInfo = compileProcessStartInfo;
+                compileProcess.Start();
+                compileProcess.WaitForExit();
+                compileOutput = compileProcess.StandardError.ReadToEnd();
+            }
+
+            return compileOutput;
+        }
+
+        public string CompileJavaCode(string filePath, byte[] runfile, string souceCode, string program, string arguments, string fileName)
+        {
+            File.WriteAllBytes(filePath, runfile);
+
+            string[] lines = File.ReadAllLines(filePath);
+
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].Contains("class Main"))
+                {
+                    lines[i+1] = souceCode;
+                }
+                lines[i] = lines[i].Replace("class Main", $"class Main{fileName}");
+            }
+
+            File.WriteAllLines(filePath, lines);
+
+            string compileOutput = string.Empty;
+
+            ProcessStartInfo compileProcessStartInfo = new ProcessStartInfo
+            {
+                FileName = program,
+                Arguments = arguments,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardError = true,
+            };
+
+            using (Process compileProcess = new Process())
+            {
+                compileProcess.StartInfo = compileProcessStartInfo;
+                compileProcess.Start();
+                compileProcess.WaitForExit();
+                compileOutput = compileProcess.StandardError.ReadToEnd();
+            }
+
+            return compileOutput;
         }
     }
 }
