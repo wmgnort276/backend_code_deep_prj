@@ -26,15 +26,6 @@ namespace backend.Controllers
             
             try
             {
-                var newExerciseModel = new ExerciseModel
-                {
-                    Name = model.Name,
-                    Description = model.Description,
-                    ExerciseLevelId = model.ExerciseLevelId,
-                    ExerciseTypeId = model.ExerciseTypeId,
-                    HintCode = model.HintCode,
-                    TimeLimit = model.TimeLimit,
-                };
                 if (model.File != null && model.File.Length > 0 && model.FileJava != null && model.FileJava.Length > 0)
                 {
                     using var memoryStream = new MemoryStream();
@@ -43,9 +34,17 @@ namespace backend.Controllers
 
                     using var memoryStreamJava = new MemoryStream();
                     model.FileJava.CopyTo(memoryStreamJava);
-                    var fileDataJava = memoryStream.ToArray();
+                    var fileDataJava = memoryStreamJava.ToArray();
 
-                    return CreatedAtAction(nameof(Add), _services.Add(newExerciseModel, fileData, fileDataJava));
+                    using var memoryStreamTestFile = new MemoryStream();
+                    model.TestFile!.CopyTo(memoryStreamTestFile);
+                    var testFile = memoryStreamTestFile.ToArray();
+
+                    using var memoryStreamTestFileJava = new MemoryStream();
+                    model.TestFileJava!.CopyTo(memoryStreamTestFileJava);
+                    var testFileJava = memoryStreamTestFileJava.ToArray();
+
+                    return CreatedAtAction(nameof(Add), _services.Add(model, fileData, fileDataJava, testFile, testFileJava));
                 }
                 else
                 {
@@ -138,11 +137,19 @@ namespace backend.Controllers
                     model.FileJava.CopyTo(memoryStreamJava);
                     var fileDataJava = memoryStreamJava.ToArray();
 
-                    return Ok(new Response { Status = "200", Message = "Success" , Data = _services.Edit(model, fileData, fileDataJava)});
+                    using var memoryStreamTestFile = new MemoryStream();
+                    model.TestFile!.CopyTo(memoryStreamTestFile);
+                    var testFile = memoryStreamTestFile.ToArray();
+
+                    using var memoryStreamTestFileJava = new MemoryStream();
+                    model.TestFileJava!.CopyTo(memoryStreamTestFileJava);
+                    var testFileJava = memoryStreamTestFileJava.ToArray();
+
+                    return Ok(new Response { Status = "200", Message = "Success" , Data = _services.Edit(model, fileData, fileDataJava, testFile, testFileJava) });
                 }
                 else
                 {
-                    return Ok(new Response { Status = "200", Message = "Success", Data = _services.Edit(model, null, null) });
+                    return Ok(new Response { Status = "200", Message = "Success", Data = _services.Edit(model, null, null, null, null) });
                 }
             }
             catch (Exception ex)
@@ -150,5 +157,27 @@ namespace backend.Controllers
                 return BadRequest("Create failed" + ex.Message);
             }
         }
+
+        [HttpPost("test-case")]
+        public IActionResult RunTestCase(Guid id, SourceCode sourceCode) 
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var result = _services.CheckTestCase(id, sourceCode);
+
+                return Ok(new Response
+                {
+                    Status = "200",
+                    Message = result == "1" ? "Success" : "Fail",
+                    Data = result == "1" ? "Success" : result
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Fail to get exercise!");
+            }
+        }
+
     }
 }

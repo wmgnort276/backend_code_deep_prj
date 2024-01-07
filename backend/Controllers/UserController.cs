@@ -1,6 +1,7 @@
 ﻿using backend.Data;
 using backend.Repository;
 using backend.ResponseModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +21,7 @@ namespace backend.Controllers
             this.userManager = userManager;
         }
 
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetUserExercises() {
             try
@@ -39,6 +41,7 @@ namespace backend.Controllers
             }
         }
 
+        [Authorize]
         [HttpGet("all")]
         public async Task<IActionResult> GetUserAllExercises()
         {
@@ -56,6 +59,49 @@ namespace backend.Controllers
             }
             catch (Exception ex)
             {
+                return BadRequest("Failed");
+            }
+        }
+
+
+        [HttpGet("rank")]
+        public IActionResult GetListRanking()
+        {
+            try
+            {
+                var result = _userService.GetRankingList();
+                return Ok(new Response
+                {
+                    Status = "200",
+                    Message = "Success",
+                    Data = result
+                });
+            } catch (Exception ex)
+            {
+                Console.WriteLine("GetListRanking error: " + ex.Message);
+                return BadRequest("Failed");
+            }
+        }
+
+        [HttpGet("user-rank")]
+        public async Task<IActionResult> GetUserRanking()
+        {
+            try
+            {
+                var userName = User.FindFirst(ClaimTypes.Name)?.Value;
+                var user = await userManager.FindByNameAsync(userName);
+
+                var result = _userService.GetUserRanking(user.Id);
+                return Ok(new Response
+                {
+                    Status = "200",
+                    Message = "Success",
+                    Data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetListRanking error: " + ex.Message);
                 return BadRequest("Failed");
             }
         }

@@ -14,7 +14,11 @@ namespace backend.Data
 
         public byte[] RunFile { get; set; }
 
+        public byte[] TestFile { get; set; }
+
         public byte[] RunFileJava { get; set; }
+
+        public byte[] TestFileJava { get; set; }
 
         public DateTime CreatedAt { get; set; }
 
@@ -40,6 +44,8 @@ namespace backend.Data
         public int Score { get; set; }
 
         public virtual ICollection<Submission>? Submissions { get; set; }
+
+        public virtual ICollection<TestCase>? TestCases { get; set; }
 
     }
 }

@@ -32,6 +32,20 @@ namespace backend.Services
             };
         }
 
+        public SubmissionResp GetSubmissionById(Guid id)
+        {
+            var submissionFound = _dbContext.Submissions.SingleOrDefault(item => item.Id == id);
+
+            return new SubmissionResp
+            {
+                Id = submissionFound.Id,
+                Status = submissionFound.Status,
+                CreatedAt = submissionFound.CreatedAt,
+                SourceCode = submissionFound.SourceCode,
+            };
+            throw new NotImplementedException();
+        }
+
         public List<SubmissionResp> GetUserSubmission(string userId, Guid exerciseId)
         {
             var submissions = _dbContext.Submissions
@@ -53,4 +67,5 @@ namespace backend.Services
             throw new NotImplementedException();
         }
     }
+
 }

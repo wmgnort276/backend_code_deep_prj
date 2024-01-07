@@ -22,5 +22,7 @@
 
         public int Runtime { get; set; }
 
+        public string? SourceCode { get; set; }
+
     }
 }

@@ -8,7 +8,7 @@ namespace backend.ResponseModel
         public string Name { get; set; }
         public string Description { get; set; }
 
-        public byte[] RunFile { get; set; }
+        public byte[]? RunFile { get; set; }
 
         public DateTime CreatedAt { get; set; }
 
@@ -35,5 +35,18 @@ namespace backend.ResponseModel
         public double Rating { get; set; }
 
         public int RatingCount { get; set; }
+
+        public virtual ICollection<TestCase>? TestCases { get; set; }
+
+        public string? Input1 { get; set; }
+
+        public string? Output1 { get; set; }
+        public string? Input2 { get; set; }
+
+        public string? Output2 { get; set; }
+
+        public string? Input3 { get; set; }
+
+        public string? Output3 { get; set; }
     }
 }

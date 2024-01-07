@@ -55,7 +55,47 @@ namespace backend.Services
             }).ToList();
         }
 
+        public List<UserRank> GetRankingList()
+        {
+            var listRankings = _dbContext.Users
+                .Where(u => !_dbContext.UserRoles
+                    .Join(_dbContext.Roles,
+                        ur => ur.RoleId,
+                        r => r.Id,
+                        (ur, r) => new { ur.UserId, r.Name })
+                     .Any(j => j.UserId == u.Id && j.Name == "admin"))
+                .ToList();
 
+            return listRankings.Select(item => new UserRank
+            {
+                Score = item.Score,
+                UserName = item.UserName,
+            })
+                .OrderByDescending(item => item.Score)
+                .Take(10)
+                .ToList();
+        }
+
+        public int GetUserRanking(string userId)
+        {
+            var listRankings = _dbContext.Users
+                 .Where(u => !_dbContext.UserRoles
+                     .Join(_dbContext.Roles,
+                         ur => ur.RoleId,
+                         r => r.Id,
+                         (ur, r) => new { ur.UserId, r.Name })
+                      .Any(j => j.UserId == u.Id && j.Name == "admin"))
+                 .OrderByDescending(item => item.Score)
+                 .ToList();
+
+            var userInfo = listRankings.FindIndex(item => item.Id == userId);
+            if(userInfo != -1)
+            {
+                return userInfo + 1;
+            }
+            
+            return -1;
+        }
 
     }
 }

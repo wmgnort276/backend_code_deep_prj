@@ -26,5 +26,7 @@ namespace backend.Data
         public int Memory { get; set; }
 
         public int Runtime { get; set; }
+
+        public string? SourceCode { get; set; }
     }
 }

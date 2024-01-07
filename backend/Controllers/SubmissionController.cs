@@ -1,5 +1,6 @@
 ﻿using backend.Repository;
 using backend.ResponseModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -30,6 +31,21 @@ namespace backend.Controllers
             } catch (Exception ex)
             {
                 return BadRequest("Fail to get submission!");
+            }
+        }
+
+
+        [HttpGet("{id}")]
+        public IActionResult GetById(Guid id)
+        {
+            try
+            {
+                var submission = _services.GetSubmissionById(id);
+                return Ok(new ResponseModel.Response { Status = "200", Message = "Success", Data = submission });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Get fail");
             }
         }
     }

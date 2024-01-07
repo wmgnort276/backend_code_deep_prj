@@ -22,6 +22,8 @@ namespace backend.Data
 
         public DbSet<Rating> Rating { get; set; }
 
+        public DbSet<TestCase> TestCases { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -54,7 +56,12 @@ namespace backend.Data
             {
                 rating.Property(item => item.CreatedAt).HasDefaultValueSql("getutcdate()");
             });
-            
+
+            modelBuilder.Entity<TestCase>(tc =>
+            {
+                tc.Property(item => item.CreatedAt).HasDefaultValueSql("getutcdate()");
+            });
+
         }
     }
 }

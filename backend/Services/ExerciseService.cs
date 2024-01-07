@@ -2,11 +2,15 @@
 using backend.Repository;
 using backend.RequestModel;
 using backend.ResponseModel;
+using Docker.DotNet.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.JSInterop;
 using System;
 using System.Diagnostics;
+using System.Net.WebSockets;
+using System.Reflection.Metadata;
 
 namespace backend.Services
 {
@@ -17,7 +21,7 @@ namespace backend.Services
         public ExerciseService(MyDbContext dbContext) {
             _dbContext = dbContext;
         }
-        public ExerciseResp Add(ExerciseModel model, byte[] file, byte[] fileJava)
+        public ExerciseResp Add(ExerciseModel model, byte[] file, byte[] fileJava, byte[] testFile, byte[] testFileJava)
         {
 
           var exerciseLevels = _dbContext.ExerciseLevels.SingleOrDefault(item => item.Id == model.ExerciseLevelId);
@@ -31,12 +35,45 @@ namespace backend.Services
              ExerciseLevelId = model.ExerciseLevelId,
              ExerciseTypeId = model.ExerciseTypeId,
              RunFile = file,
+             RunFileJava = fileJava,
+             TestFile = testFile,
+             TestFileJava = testFileJava,
              HintCode = model.HintCode,
+             HintCodeJava = model.HintCodeJava,
              TimeLimit = model.TimeLimit,
              Score = (exerciseLevels?.Score != null) ? exerciseLevels.Score : 0
           };
 
             _dbContext.Exercises.Add(newExercise);
+            _dbContext.SaveChanges();
+
+            var newTestCase1 = new TestCase
+            {
+                ExerciseId = newExercise.Id,
+                Input = model.Input1!,
+                Output = model.Output1!,
+                Sequence = 1
+            };
+
+            var newTestCase2 = new TestCase
+            {
+                ExerciseId = newExercise.Id,
+                Input = model.Input2!,
+                Output = model.Output2!,
+                Sequence = 2
+            };
+
+            var newTestCase3 = new TestCase
+            {
+                ExerciseId = newExercise.Id,
+                Input = model.Input3!,
+                Output = model.Output3!,
+                Sequence = 3
+            };
+
+            _dbContext.TestCases.Add(newTestCase1);
+            _dbContext.TestCases.Add(newTestCase2);
+            _dbContext.TestCases.Add(newTestCase3);
             _dbContext.SaveChanges();
 
             return new ExerciseResp
@@ -95,11 +132,13 @@ namespace backend.Services
                     .Include(item => item.ExerciseType)
                     .SingleOrDefault(item => item.Id == id);
 
+            
 
             if (exercise != null)
             {
                 var ratings = _dbContext.Rating.Where(rating => rating.ExerciseId == id)
                     .ToList();
+
                 double averageRating = 0;
                 int ratingCount = 0;
                 if(ratings.Any())
@@ -108,6 +147,39 @@ namespace backend.Services
                     ratingCount = ratings.Count();
                 }
 
+                var testCases = _dbContext.TestCases
+                    .Where(item => item.ExerciseId == exercise.Id)
+                    .ToList();
+                string input1 = String.Empty;
+                string input2 = String.Empty;
+                string input3 = String.Empty;
+                string output1 = String.Empty;
+                string output2 = String.Empty;
+                string output3 = String.Empty;
+
+                if (testCases.Any())
+                {
+                    foreach (var item in testCases)
+                    {
+                        if(item.Sequence == 1)
+                        {
+                            input1 = item.Input;
+                            output1 = item.Output;
+                        }
+                        else if (item.Sequence == 2)
+                        {
+                            input2 = item.Input;
+                            output2 = item.Output;
+                        }
+                        else if (item.Sequence == 3)
+                        {
+                            input3 = item.Input;
+                            output3 = item.Output;
+                        }
+                    }
+                }
+
+
                 return new ExerciseResp
                 {
                     Id = exercise.Id,
@@ -115,7 +187,7 @@ namespace backend.Services
                     Description = exercise.Description,
                     ExerciseLevelId = exercise.ExerciseLevelId,
                     ExerciseTypeId = exercise.ExerciseTypeId,
-                    RunFile = exercise.RunFile,
+                    // RunFile = exercise.RunFile,
                     ExerciseLevelName = exercise.ExerciseLevel.Name,
                     ExerciseTypeName = exercise.ExerciseType.Name,
                     HintCode = exercise.HintCode,
@@ -123,6 +195,12 @@ namespace backend.Services
                     TimeLimit = exercise.TimeLimit,
                     RatingCount = ratingCount,
                     Rating = averageRating,
+                    Input1 = input1,
+                    Input2 = input2,
+                    Input3 = input3,
+                    Output1 = output1,
+                    Output2 = output2,
+                    Output3 = output3,
                 };
             }
 
@@ -270,7 +348,7 @@ namespace backend.Services
                     Memory = memory,
                 };
 
-                AddSubmission(submission);
+                AddSubmission(submission, code);
                 
                 // Update user score only it is the first time user submit 
                 if(executionResult == "1" && isFirstSubmit)
@@ -310,7 +388,7 @@ namespace backend.Services
             throw new NotImplementedException();
         }
 
-        public ExerciseResp Edit(ExerciseModel model, byte[]? file, byte[]? fileJava)
+        public ExerciseResp Edit(ExerciseModel model, byte[]? file, byte[]? fileJava, byte[]? testFile, byte[]? testFileJava)
         {
             // TODO: only level change then we find exercise level
             var exerciseLevels = _dbContext.ExerciseLevels.SingleOrDefault(item => item.Id == model.ExerciseLevelId);
@@ -329,6 +407,7 @@ namespace backend.Services
             exercise.HintCodeJava = model.HintCodeJava;
             exercise.TimeLimit = model.TimeLimit;
             exercise.Score = (exerciseLevels?.Score != null) ? exerciseLevels.Score : 0;
+            
 
             if (file != null)
             {
@@ -338,7 +417,74 @@ namespace backend.Services
             {
                 exercise.RunFileJava = fileJava;
             }
+            if (testFile != null)
+            {
+                exercise.TestFile = testFile;
+            }
+            if (testFileJava != null)
+            {
+                exercise.TestFileJava = testFileJava;
+            }
             _dbContext.SaveChanges();
+
+            var listTestCase = _dbContext.TestCases
+                .Where(item => item.ExerciseId ==  exercise.Id)
+                .ToList();
+
+            if(listTestCase.Any())
+            {
+                foreach (var item in listTestCase)
+                {
+                    if (item.Sequence == 1)
+                    {
+                        item.Input = model.Input1;
+                        item.Output = model.Output1;
+                    }
+                    else if (item.Sequence == 2)
+                    {
+                        item.Input = model.Input2;
+                        item.Output = model.Output2;
+                    }
+                    else if (item.Sequence == 3)
+                    {
+                        item.Input = model.Input3;
+                        item.Output = model.Output3;
+                    }
+                }
+                _dbContext.SaveChanges();
+
+            } else
+            {
+                // Insert new data to table
+                var newTestCase1 = new TestCase
+                {
+                    ExerciseId = exercise.Id,
+                    Input = model.Input1!,
+                    Output = model.Output1!,
+                    Sequence = 1
+                };
+
+                var newTestCase2 = new TestCase
+                {
+                    ExerciseId = exercise.Id,
+                    Input = model.Input2!,
+                    Output = model.Output2!,
+                    Sequence = 2
+                };
+
+                var newTestCase3 = new TestCase
+                {
+                    ExerciseId = exercise.Id,
+                    Input = model.Input3!,
+                    Output = model.Output3!,
+                    Sequence = 3
+                };
+
+                _dbContext.TestCases.Add(newTestCase1);
+                _dbContext.TestCases.Add(newTestCase2);
+                _dbContext.TestCases.Add(newTestCase3);
+                _dbContext.SaveChanges();
+            }
 
             return new ExerciseResp
             {
@@ -351,7 +497,7 @@ namespace backend.Services
             };
         }
 
-        public SubmissionResp AddSubmission(SubmissionModel model)
+        public SubmissionResp AddSubmission(SubmissionModel model, string scourceCode)
         {
             var newSubmission = new Submission
             {
@@ -360,6 +506,7 @@ namespace backend.Services
                 ExerciseId = model.ExerciseId,
                 Runtime = model.Runtime,
                 Memory = model.Memory,
+                SourceCode = scourceCode,
             };
 
             _dbContext.Add(newSubmission);
@@ -469,6 +616,148 @@ namespace backend.Services
             }
 
             return compileOutput;
+        }
+
+
+        public string CheckTestCase(Guid exerciseId, SourceCode sourceCode)
+        {
+            int DEFAULT_TIME_LIMIT = 10000;
+            var code = sourceCode.Code;
+            string fileName = Guid.NewGuid().ToString().Replace("-", ""); ;
+
+            string filePath = string.Empty;
+            string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
+
+            string compileResult = string.Empty;
+            string executionResult = string.Empty;
+            string errorExecutionResult = string.Empty;
+
+            int limitTime = 0;
+
+            var exercise = _dbContext.Exercises.SingleOrDefault(item => item.Id == exerciseId);
+            if (exercise != null)
+            {
+                limitTime = exercise.TimeLimit;
+            }
+
+            var listTestCase = _dbContext.TestCases
+               .Where(item => item.ExerciseId == exercise.Id)
+               .ToList();
+
+            try
+            {
+                string program = string.Empty;
+                string arguments = string.Empty;
+                string fileTestCasePath = Path.Combine(Directory.GetCurrentDirectory(), "TC" + fileName + ".txt");
+                File.WriteAllText(fileTestCasePath, listTestCase[0].Input);
+
+                if (sourceCode.Lang == "C++")
+                {
+                    filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName + ".cpp");
+                    program = "g++";
+                    arguments = $"{filePath} -o {compiledFilePath}";
+                    compileResult = CompileCppCode(filePath, exercise.TestFile, code, program, arguments);
+                }
+                else
+                {
+                    filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName + ".java");
+                    program = "javac";
+                    arguments = $"{filePath}";
+                    compileResult = CompileJavaCode(filePath, exercise.TestFileJava, code, program, arguments, fileName);
+                    compiledFilePath = Directory.GetCurrentDirectory();
+                }
+
+                if (!string.IsNullOrEmpty(compileResult))
+                {
+                    string cleanedErrorOutput = compileResult.Replace($"{filePath}:", "");
+                    throw new Exception(cleanedErrorOutput);
+                }
+
+
+                ProcessStartInfo executionProcessStartInfo = new ProcessStartInfo
+                {
+                    FileName = compiledFilePath,
+                    Arguments = $"< {fileTestCasePath}",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardError = true,
+                };
+
+                ProcessStartInfo executionJavaProcessStartInfo = new ProcessStartInfo
+                {
+                    FileName = "java",
+                    Arguments = $"-cp {compiledFilePath} Main{fileName}",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardError = true,
+                };
+
+                using (Process executionProcess = new Process())
+                {
+                    var startTime = DateTime.Now;
+                    executionProcess.StartInfo = (sourceCode.Lang == "C++") ? executionProcessStartInfo : executionJavaProcessStartInfo;
+
+                    // Start watiching process
+                    executionProcess.Start();
+
+
+                    // TODO: change the time waiting
+                    bool isProcessStop = executionProcess.WaitForExit((limitTime > 0) ? limitTime : DEFAULT_TIME_LIMIT);
+
+                    if (!isProcessStop)
+                    {
+                        Console.WriteLine("Not finish yet!");
+                        throw new TimeoutException("Execution timed out");
+                    }
+
+                    executionResult = executionProcess.StandardOutput.ReadToEnd();
+                    errorExecutionResult = executionProcess.StandardError.ReadToEnd();
+                }
+
+                return executionResult;
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return ex.Message;
+            }
+            finally
+            {
+
+                if (System.IO.File.Exists(filePath))
+                {
+                    // System.IO.File.Delete(filePath);
+                }
+
+                if (System.IO.File.Exists(compiledFilePath + ".exe"))
+                {
+                    foreach (var process in Process.GetProcessesByName(fileName))
+                    {
+                        process.Kill();
+                        process.WaitForExit();
+                    }
+
+                    System.IO.File.Delete(compiledFilePath + ".exe");
+
+                }
+
+                if (System.IO.File.Exists(Path.Combine(compiledFilePath, $"Main{fileName}.class")))
+                {
+                    try
+                    {
+                        System.IO.File.Delete(Path.Combine(compiledFilePath, $"Main{fileName}.class"));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("error delete file!");
+                    }
+                }
+            }
+
+            return "";
         }
     }
 }

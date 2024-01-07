@@ -8,5 +8,7 @@ namespace backend.Repository
         SubmissionResp Add(SubmissionModel model);
 
         List<SubmissionResp> GetUserSubmission(string userId, Guid exerciseId);
+
+        SubmissionResp GetSubmissionById(Guid id);
     }
 }
