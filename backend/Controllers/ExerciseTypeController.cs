@@ -1,6 +1,7 @@
 ﻿using backend.Repository;
 using backend.RequestModel;
 using backend.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -32,6 +33,7 @@ namespace backend.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost]
         public IActionResult Add(ExerciseTypeModel model)
         {

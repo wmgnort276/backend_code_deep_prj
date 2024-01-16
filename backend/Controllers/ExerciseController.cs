@@ -71,6 +71,7 @@ namespace backend.Controllers
             }
         }
 
+        [Authorize]
         [HttpGet("dowload")]
         public IActionResult DownloadFile(Guid id)
         {
@@ -88,6 +89,7 @@ namespace backend.Controllers
             }
         }
 
+        [Authorize]
         [HttpGet]
         public IActionResult Exercises(int? exerciseLevelId, int? exerciseTypeId, string? keyword, int? pageIndex, int? pageSize)
         {
@@ -100,6 +102,7 @@ namespace backend.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost("submit")]
         public IActionResult SubmitCode(Guid id, SourceCode sourceCode)
         {
@@ -158,6 +161,7 @@ namespace backend.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost("test-case")]
         public IActionResult RunTestCase(Guid id, SourceCode sourceCode) 
         {

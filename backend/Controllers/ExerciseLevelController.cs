@@ -1,6 +1,7 @@
 ﻿using backend.Data;
 using backend.RequestModel;
 using backend.ResponseModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,6 +17,7 @@ namespace backend.Controllers
             _dbContext = dbContext;
         }
 
+        [Authorize]
         [HttpGet]
         public IActionResult All() {
             try
@@ -35,6 +37,7 @@ namespace backend.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost]
         public IActionResult Add(ExerciseLevelModel exerciseLevel)
         {

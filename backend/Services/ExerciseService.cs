@@ -224,6 +224,7 @@ namespace backend.Services
         {
             int DEFAULT_TIME_LIMIT = 10000;
             var code = sourceCode.Code;
+           
             string fileName = Guid.NewGuid().ToString().Replace("-", ""); ;
 
             string filePath = string.Empty;
@@ -245,6 +246,16 @@ namespace backend.Services
 
             try
             {
+
+                // Check source code
+
+                if (code.Contains("remove("))
+                {
+                    throw new InvalidOperationException("Source code contain sensitive function name! Checkout the term of use page for details!");
+                }
+
+                //////
+                
                 string program = string.Empty;
                 string arguments = string.Empty;
 
@@ -319,7 +330,7 @@ namespace backend.Services
                     if (!isProcessStop)
                     {
                         Console.WriteLine("Not finish yet!");
-                        throw new TimeoutException("Execution timed out");
+                        throw new TimeoutException("Execution time out!");
                     }
 
                     executionResult = executionProcess.StandardOutput.ReadToEnd();

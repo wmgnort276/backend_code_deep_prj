@@ -1,6 +1,7 @@
 ﻿using backend.Repository;
 using backend.RequestModel;
 using backend.ResponseModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -17,6 +18,7 @@ namespace backend.Controllers
             _service = repository;
         }
 
+        [Authorize]
         [HttpPost]
         public IActionResult CreateComment(CommentModel comment)
         {
@@ -36,6 +38,7 @@ namespace backend.Controllers
             }
         }
 
+        [Authorize]
         [HttpGet]
         public IActionResult GetComments(Guid ExerciseId)
         {

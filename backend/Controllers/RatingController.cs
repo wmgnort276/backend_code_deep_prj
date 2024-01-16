@@ -1,6 +1,7 @@
 ﻿using backend.Repository;
 using backend.RequestModel;
 using backend.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -16,6 +17,7 @@ namespace backend.Controllers
             _ratingService = ratingService;
         }
 
+        [Authorize]
         [HttpPost]
         public IActionResult Rating(RatingModel rating)
         {

@@ -17,6 +17,7 @@ namespace backend.Controllers
             _services = submissionRepository;
         }
 
+        [Authorize]
         [HttpGet]
         public IActionResult GetUserSubmissions(Guid exerciseId) {
             try
@@ -34,7 +35,7 @@ namespace backend.Controllers
             }
         }
 
-
+        [Authorize]
         [HttpGet("{id}")]
         public IActionResult GetById(Guid id)
         {
