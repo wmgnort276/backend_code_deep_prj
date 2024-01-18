@@ -249,7 +249,7 @@ namespace backend.Services
 
                 // Check source code
 
-                if (code.Contains("remove("))
+                if (CheckSourceCode(code))
                 {
                     throw new InvalidOperationException("Source code contain sensitive function name! Checkout the term of use page for details!");
                 }
@@ -769,6 +769,63 @@ namespace backend.Services
             }
 
             return "";
+        }
+
+
+        public bool CheckSourceCode(string sourceCode)
+        {
+            string[] forbiddenStrings = new ForbiddenStringsBuilder()
+                .AddGroup(FileActionForbidden())
+                .AddGroup(NetowrkForbidden())
+                .AddGroup(SystemForbidden())
+                .Build();
+
+            foreach (string forbiddenString in forbiddenStrings)
+            {
+                if (sourceCode.Contains(forbiddenString))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public class ForbiddenStringsBuilder
+        {
+            private List<string> forbiddenStrings = new List<string>();
+
+            public ForbiddenStringsBuilder AddGroup(string[] group)
+            {
+                forbiddenStrings.AddRange(group);
+                return this;
+            }
+
+            public ForbiddenStringsBuilder AddString(string str)
+            {
+                forbiddenStrings.Add(str);
+                return this;
+            }
+
+            public string[] Build()
+            {
+                return forbiddenStrings.ToArray();
+            }
+        }
+
+        public string[] FileActionForbidden()
+        {
+            return new string[] { "remove(", "delete(" };
+        }
+
+        public string[] NetowrkForbidden()
+        {
+            return new string[] { "socket(", "connect(" };
+        }
+
+        public string[] SystemForbidden()
+        {
+            return new string[] { "exec(", "process(" };
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using backend.Data;
 using backend.RequestModel;
 using backend.ResponseModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -96,6 +97,7 @@ namespace backend.Controllers
             return Unauthorized();
         }
 
+        [Authorize(Roles = UserRoles.Admin)]
         [HttpPost]
         [Route("register-admin")]
         public async Task<IActionResult> RegisterAdmin([FromBody] RegisterModel model)
