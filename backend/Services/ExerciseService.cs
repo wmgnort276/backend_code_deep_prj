@@ -249,7 +249,7 @@ namespace backend.Services
 
                 // Check source code
 
-                if (CheckSourceCode(code))
+                if (!CheckSourceCode(code))
                 {
                     throw new InvalidOperationException("Source code contain sensitive function name! Checkout the term of use page for details!");
                 }
