@@ -17,7 +17,7 @@ namespace backend.Controllers
             _dbContext = dbContext;
         }
 
-        [Authorize]
+        // [Authorize]
         [HttpGet]
         public IActionResult All() {
             try
@@ -37,7 +37,7 @@ namespace backend.Controllers
             }
         }
 
-        [Authorize]
+        // [Authorize]
         [HttpPost]
         public IActionResult Add(ExerciseLevelModel exerciseLevel)
         {

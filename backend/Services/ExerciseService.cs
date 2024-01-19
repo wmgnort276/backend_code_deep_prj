@@ -222,7 +222,7 @@ namespace backend.Services
 
         public string Submit(Guid id, string userId, SourceCode sourceCode)
         {
-            int DEFAULT_TIME_LIMIT = 10000;
+            int DEFAULT_TIME_LIMIT = 20000;
             var code = sourceCode.Code;
            
             string fileName = Guid.NewGuid().ToString().Replace("-", ""); ;
@@ -632,7 +632,7 @@ namespace backend.Services
 
         public string CheckTestCase(Guid exerciseId, SourceCode sourceCode)
         {
-            int DEFAULT_TIME_LIMIT = 10000;
+            int DEFAULT_TIME_LIMIT = 20000;
             var code = sourceCode.Code;
             string fileName = Guid.NewGuid().ToString().Replace("-", ""); ;
 
@@ -825,7 +825,7 @@ namespace backend.Services
 
         public string[] SystemForbidden()
         {
-            return new string[] { "exec(", "process(" };
+            return new string[] { "exec(", "process(", "pause(", "sleep(", "fork(" };
         }
     }
 }

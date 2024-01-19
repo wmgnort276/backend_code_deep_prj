@@ -33,7 +33,7 @@ namespace backend.Controllers
             }
         }
 
-        [Authorize]
+        // [Authorize]
         [HttpPost]
         public IActionResult Add(ExerciseTypeModel model)
         {
