@@ -173,13 +173,13 @@ namespace backend.Controllers
                 return Ok(new Response
                 {
                     Status = "200",
-                    Message = result == "1" ? "Success" : "Fail",
-                    Data = result == "1" ? "Success" : result
+                    Message = "Success",
+                    Data = result
                 });
             }
             catch (Exception ex)
             {
-                return BadRequest("Fail to get exercise!");
+                return BadRequest("Fail to run test case!");
             }
         }
 

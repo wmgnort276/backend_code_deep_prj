@@ -17,6 +17,6 @@ namespace backend.Repository
 
         ExerciseResp Edit(ExerciseModel model, byte[]? file, byte[]? fileJava, byte[]? testFile, byte[]? testFileJava);
 
-        string CheckTestCase(Guid exerciseId, SourceCode sourceCode);
+        List<TestCaseResp> CheckTestCase(Guid exerciseId, SourceCode sourceCode);
     }
 }

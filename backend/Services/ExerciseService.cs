@@ -21,7 +21,11 @@ namespace backend.Services
         public ExerciseService(MyDbContext dbContext) {
             _dbContext = dbContext;
         }
-        public ExerciseResp Add(ExerciseModel model, byte[] file, byte[] fileJava, byte[] testFile, byte[] testFileJava)
+        public ExerciseResp Add(ExerciseModel model, 
+            byte[] file,
+            byte[] fileJava,
+            byte[] testFile, 
+            byte[] testFileJava)
         {
 
           var exerciseLevels = _dbContext.ExerciseLevels.SingleOrDefault(item => item.Id == model.ExerciseLevelId);
@@ -264,13 +268,13 @@ namespace backend.Services
                   filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName + ".cpp");
                   program = "g++";
                   arguments = $"{filePath} -o {compiledFilePath}";
-                  compileResult = CompileCppCode(filePath, exercise.RunFile, code, program, arguments);
+                  compileResult = CompileCppCode(filePath, exercise.RunFile, code, program, arguments, "");
                 } else
                 {
                   filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName + ".java");
                   program = "javac";
                   arguments = $"{filePath}";
-                  compileResult = CompileJavaCode(filePath, exercise.RunFileJava, code, program, arguments, fileName);
+                  compileResult = CompileJavaCode(filePath, exercise.RunFileJava, code, program, arguments, fileName,"");
                   compiledFilePath = Directory.GetCurrentDirectory();
                 }
 
@@ -388,7 +392,7 @@ namespace backend.Services
                 {
                     try
                     {
-                      System.IO.File.Delete(Path.Combine(compiledFilePath, $"Main{fileName}.class"));
+                       System.IO.File.Delete(Path.Combine(compiledFilePath, $"Main{fileName}.class"));
                     } catch(Exception ex)
                     {
                         Console.WriteLine("error delete file!");
@@ -553,7 +557,14 @@ namespace backend.Services
             return true;
         }
 
-        public string CompileCppCode(string filePath, byte[] runfile, string souceCode, string program, string arguments)
+        public string CompileCppCode(string filePath, 
+            byte[] runfile, 
+            string souceCode, 
+            string program, 
+            string arguments,
+            string testCaseInput,
+            bool ISCheckTestCase = false
+            )
         {
             File.WriteAllBytes(filePath, runfile);
 
@@ -563,6 +574,11 @@ namespace backend.Services
             {
                 lines[7] = souceCode;
                 File.WriteAllLines(filePath, lines);
+            }
+
+            if(ISCheckTestCase)
+            {
+                PrepareTestCase(filePath, testCaseInput);
             }
 
             string compileOutput = string.Empty;
@@ -588,7 +604,15 @@ namespace backend.Services
             return compileOutput;
         }
 
-        public string CompileJavaCode(string filePath, byte[] runfile, string souceCode, string program, string arguments, string fileName)
+        public string CompileJavaCode(string filePath, 
+            byte[] runfile, 
+            string souceCode, 
+            string program, 
+            string arguments, 
+            string fileName, 
+            string testCaseInput,
+            bool ISCheckTestCase = false
+            )
         {
             File.WriteAllBytes(filePath, runfile);
 
@@ -606,6 +630,11 @@ namespace backend.Services
 
             File.WriteAllLines(filePath, lines);
 
+            if (ISCheckTestCase)
+            {
+                PrepareTestCaseJava(filePath, testCaseInput);
+            }
+
             string compileOutput = string.Empty;
 
             ProcessStartInfo compileProcessStartInfo = new ProcessStartInfo
@@ -630,7 +659,7 @@ namespace backend.Services
         }
 
 
-        public string CheckTestCase(Guid exerciseId, SourceCode sourceCode)
+        public List<TestCaseResp> CheckTestCase(Guid exerciseId, SourceCode sourceCode)
         {
             int DEFAULT_TIME_LIMIT = 20000;
             var code = sourceCode.Code;
@@ -655,120 +684,199 @@ namespace backend.Services
                .Where(item => item.ExerciseId == exercise.Id)
                .ToList();
 
+            List<TestCaseResp> listTestCaseRes = new List<TestCaseResp>();
+
+            for (int i = 0; i < 3; i++)
+            {
+
+                try
+                {
+                    string program = string.Empty;
+                    string arguments = string.Empty;
+
+                    if (sourceCode.Lang == "C++")
+                    {
+                        filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName + ".cpp");
+                        program = "g++";
+                        arguments = $"{filePath} -o {compiledFilePath}";
+                        compileResult = CompileCppCode(filePath, exercise.TestFile, code, program, arguments, listTestCase[i].Input, true);
+                    }
+                    else
+                    {
+                        filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName + ".java");
+                        program = "javac";
+                        arguments = $"{filePath}";
+                        compileResult = CompileJavaCode(filePath, exercise.TestFileJava, code, program, arguments, fileName, listTestCase[0].Input, true);
+                        compiledFilePath = Directory.GetCurrentDirectory();
+                    }
+
+                    if (!string.IsNullOrEmpty(compileResult))
+                    {
+                        string cleanedErrorOutput = compileResult.Replace($"{filePath}:", "");
+                        throw new Exception(cleanedErrorOutput);
+                    }
+
+
+                    ProcessStartInfo executionProcessStartInfo = new ProcessStartInfo
+                    {
+                        FileName = compiledFilePath,
+                        RedirectStandardOutput = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardError = true,
+                    };
+
+
+                    using (Process executionProcess = new Process())
+                    {
+                        var startTime = DateTime.Now;
+                        executionProcess.StartInfo = (sourceCode.Lang == "C++") ? executionProcessStartInfo : executionProcessStartInfo;
+
+                        // Start watiching process
+                        executionProcess.Start();
+
+
+                        // TODO: change the time waiting
+                        bool isProcessStop = executionProcess.WaitForExit((limitTime > 0) ? limitTime : DEFAULT_TIME_LIMIT);
+
+                        if (!isProcessStop)
+                        {
+                            Console.WriteLine("Not finish yet!");
+                            throw new TimeoutException("Execution timed out");
+                        }
+
+                        executionResult = executionProcess.StandardOutput.ReadToEnd();
+                        errorExecutionResult = executionProcess.StandardError.ReadToEnd();
+
+                        if (!string.IsNullOrEmpty(errorExecutionResult))
+                        {
+                            string cleanedErrorOutput = errorExecutionResult.Replace($"{filePath}:", "");
+                            throw new Exception(cleanedErrorOutput);
+                        }
+
+                    }
+
+                    var testCaseRes = new TestCaseResp
+                    {
+                        Input = listTestCase[i].Input,
+                        Output = executionResult,
+                        Expected = listTestCase[i].Output,
+                        Status = executionResult.Equals(listTestCase[i].Output)
+                    };
+
+                    listTestCaseRes.Add(testCaseRes);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                    var testCaseRes = new TestCaseResp
+                    {
+                        Input = listTestCase[i].Input,
+                        Output = ex.Message,
+                        Expected = listTestCase[i].Output,
+                        Status = false
+                    };
+
+                    listTestCaseRes.Add(testCaseRes);
+                }
+                finally
+                {
+
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        // System.IO.File.Delete(filePath);
+                    }
+
+                    if (System.IO.File.Exists(compiledFilePath + ".exe"))
+                    {
+                        foreach (var process in Process.GetProcessesByName(fileName))
+                        {
+                            process.Kill();
+                            process.WaitForExit();
+                        }
+
+                        System.IO.File.Delete(compiledFilePath + ".exe");
+
+                    }
+
+                    if (System.IO.File.Exists(Path.Combine(compiledFilePath, $"Main{fileName}.class")))
+                    {
+                        try
+                        {
+                            System.IO.File.Delete(Path.Combine(compiledFilePath, $"Main{fileName}.class"));
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("error delete file!");
+                        }
+                    }
+                }
+
+            }
+
+            return listTestCaseRes;
+
+        }
+
+        public void PrepareTestCase(string filename, string input)
+        {
+            string targetString = "string TESTCASE;";
+
+
+            string newValue = $"string TESTCASE = \"{input}\";";
+
             try
             {
-                string program = string.Empty;
-                string arguments = string.Empty;
-                string fileTestCasePath = Path.Combine(Directory.GetCurrentDirectory(), "TC" + fileName + ".txt");
-                File.WriteAllText(fileTestCasePath, listTestCase[0].Input);
+                string[] lines = File.ReadAllLines(filename);
 
-                if (sourceCode.Lang == "C++")
+                for (int i = 0; i < lines.Length; i++)
                 {
-                    filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName + ".cpp");
-                    program = "g++";
-                    arguments = $"{filePath} -o {compiledFilePath}";
-                    compileResult = CompileCppCode(filePath, exercise.TestFile, code, program, arguments);
-                }
-                else
-                {
-                    filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName + ".java");
-                    program = "javac";
-                    arguments = $"{filePath}";
-                    compileResult = CompileJavaCode(filePath, exercise.TestFileJava, code, program, arguments, fileName);
-                    compiledFilePath = Directory.GetCurrentDirectory();
-                }
-
-                if (!string.IsNullOrEmpty(compileResult))
-                {
-                    string cleanedErrorOutput = compileResult.Replace($"{filePath}:", "");
-                    throw new Exception(cleanedErrorOutput);
-                }
-
-
-                ProcessStartInfo executionProcessStartInfo = new ProcessStartInfo
-                {
-                    FileName = compiledFilePath,
-                    Arguments = $"< {fileTestCasePath}",
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardError = true,
-                };
-
-                ProcessStartInfo executionJavaProcessStartInfo = new ProcessStartInfo
-                {
-                    FileName = "java",
-                    Arguments = $"-cp {compiledFilePath} Main{fileName}",
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardError = true,
-                };
-
-                using (Process executionProcess = new Process())
-                {
-                    var startTime = DateTime.Now;
-                    executionProcess.StartInfo = (sourceCode.Lang == "C++") ? executionProcessStartInfo : executionJavaProcessStartInfo;
-
-                    // Start watiching process
-                    executionProcess.Start();
-
-
-                    // TODO: change the time waiting
-                    bool isProcessStop = executionProcess.WaitForExit((limitTime > 0) ? limitTime : DEFAULT_TIME_LIMIT);
-
-                    if (!isProcessStop)
+                    if (lines[i].Contains(targetString))
                     {
-                        Console.WriteLine("Not finish yet!");
-                        throw new TimeoutException("Execution timed out");
+                        lines[i] = newValue;
+                        break;
                     }
-
-                    executionResult = executionProcess.StandardOutput.ReadToEnd();
-                    errorExecutionResult = executionProcess.StandardError.ReadToEnd();
                 }
 
-                return executionResult;
-
+                File.WriteAllLines(filename, lines);
             }
-            catch (Exception ex)
+            catch (FileNotFoundException)
             {
-                Console.WriteLine(ex);
-                return ex.Message;
+                Console.WriteLine("Cannot open file test case: " + filename);
+                return;
             }
-            finally
+
+        }
+
+        public void PrepareTestCaseJava(string filename, string input)
+        {
+            string targetString = "static String TESTCASE;";
+
+
+            string newValue = $"static String TESTCASE = \"{input}\";";
+
+            try
             {
+                string[] lines = File.ReadAllLines(filename);
 
-                if (System.IO.File.Exists(filePath))
+                for (int i = 0; i < lines.Length; i++)
                 {
-                    // System.IO.File.Delete(filePath);
-                }
-
-                if (System.IO.File.Exists(compiledFilePath + ".exe"))
-                {
-                    foreach (var process in Process.GetProcessesByName(fileName))
+                    if (lines[i].Contains(targetString))
                     {
-                        process.Kill();
-                        process.WaitForExit();
-                    }
-
-                    System.IO.File.Delete(compiledFilePath + ".exe");
-
-                }
-
-                if (System.IO.File.Exists(Path.Combine(compiledFilePath, $"Main{fileName}.class")))
-                {
-                    try
-                    {
-                        System.IO.File.Delete(Path.Combine(compiledFilePath, $"Main{fileName}.class"));
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("error delete file!");
+                        lines[i] = newValue;
+                        break;
                     }
                 }
+
+                File.WriteAllLines(filename, lines);
+            }
+            catch (FileNotFoundException)
+            {
+                Console.WriteLine("Cannot open file test case: " + filename);
+                return;
             }
 
-            return "";
         }
 
 
