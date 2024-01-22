@@ -373,7 +373,7 @@ namespace backend.Services
 
                 if (System.IO.File.Exists(filePath))
                 {
-                    System.IO.File.Delete(filePath);
+                    // System.IO.File.Delete(filePath);
                 }
 
                 if (System.IO.File.Exists(compiledFilePath + ".exe"))
@@ -663,10 +663,7 @@ namespace backend.Services
         {
             int DEFAULT_TIME_LIMIT = 20000;
             var code = sourceCode.Code;
-            string fileName = Guid.NewGuid().ToString().Replace("-", ""); ;
-
-            string filePath = string.Empty;
-            string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
+            
 
             string compileResult = string.Empty;
             string executionResult = string.Empty;
@@ -688,6 +685,11 @@ namespace backend.Services
 
             for (int i = 0; i < 3; i++)
             {
+
+                string fileName = Guid.NewGuid().ToString().Replace("-", ""); ;
+
+                string filePath = string.Empty;
+                string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
 
                 try
                 {
@@ -726,11 +728,21 @@ namespace backend.Services
                         RedirectStandardError = true,
                     };
 
+                    ProcessStartInfo executionJavaProcessStartInfo = new ProcessStartInfo
+                    {
+                        FileName = "java",
+                        Arguments = $"-cp {compiledFilePath} Main{fileName}",
+                        RedirectStandardOutput = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardError = true,
+                    };
+
 
                     using (Process executionProcess = new Process())
                     {
                         var startTime = DateTime.Now;
-                        executionProcess.StartInfo = (sourceCode.Lang == "C++") ? executionProcessStartInfo : executionProcessStartInfo;
+                        executionProcess.StartInfo = (sourceCode.Lang == "C++") ? executionProcessStartInfo : executionJavaProcessStartInfo;
 
                         // Start watiching process
                         executionProcess.Start();
@@ -785,7 +797,7 @@ namespace backend.Services
 
                     if (System.IO.File.Exists(filePath))
                     {
-                        // System.IO.File.Delete(filePath);
+                        System.IO.File.Delete(filePath);
                     }
 
                     if (System.IO.File.Exists(compiledFilePath + ".exe"))
