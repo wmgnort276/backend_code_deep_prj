@@ -373,7 +373,7 @@ namespace backend.Services
 
                 if (System.IO.File.Exists(filePath))
                 {
-                    // System.IO.File.Delete(filePath);
+                    System.IO.File.Delete(filePath);
                 }
 
                 if (System.IO.File.Exists(compiledFilePath + ".exe"))
@@ -683,13 +683,14 @@ namespace backend.Services
 
             List<TestCaseResp> listTestCaseRes = new List<TestCaseResp>();
 
+            string fileName = Guid.NewGuid().ToString().Replace("-", ""); ;
+
+            string filePath = string.Empty;
+            string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
+
             for (int i = 0; i < 3; i++)
             {
 
-                string fileName = Guid.NewGuid().ToString().Replace("-", ""); ;
-
-                string filePath = string.Empty;
-                string compiledFilePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
 
                 try
                 {
@@ -708,7 +709,7 @@ namespace backend.Services
                         filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName + ".java");
                         program = "javac";
                         arguments = $"{filePath}";
-                        compileResult = CompileJavaCode(filePath, exercise.TestFileJava, code, program, arguments, fileName, listTestCase[0].Input, true);
+                        compileResult = CompileJavaCode(filePath, exercise.TestFileJava, code, program, arguments, fileName, listTestCase[i].Input, true);
                         compiledFilePath = Directory.GetCurrentDirectory();
                     }
 
@@ -775,6 +776,9 @@ namespace backend.Services
                         Expected = listTestCase[i].Output,
                         Status = executionResult.Equals(listTestCase[i].Output)
                     };
+
+                    Console.Write("====== Output: " + executionResult);
+                    Console.Write("====== Expected : " + listTestCase[i].Output);
 
                     listTestCaseRes.Add(testCaseRes);
 
@@ -890,6 +894,7 @@ namespace backend.Services
             }
 
         }
+
 
 
         public bool CheckSourceCode(string sourceCode)
