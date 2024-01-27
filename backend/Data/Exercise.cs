@@ -47,5 +47,7 @@ namespace backend.Data
 
         public virtual ICollection<TestCase>? TestCases { get; set; }
 
+        public virtual ICollection<Rating>? Ratings { get; set; }
+
     }
 }

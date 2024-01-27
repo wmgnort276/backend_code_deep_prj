@@ -130,30 +130,41 @@ namespace backend.Controllers
         {
             try
             {
-                if (model?.File != null && model?.File?.Length > 0 || model?.FileJava != null && model?.FileJava?.Length > 0)
+                var fileData = new byte[0];
+                var fileDataJava = new byte[0];
+                var testFile = new byte[0];
+                var testFileJava = new byte[0];
+
+                if (model.File != null && model.File.Length > 0)
                 {
                     using var memoryStream = new MemoryStream();
                     model.File.CopyTo(memoryStream);
-                    var fileData = memoryStream.ToArray();
+                    fileData = memoryStream.ToArray();
+                }
 
+                if (model.FileJava != null && model.FileJava.Length > 0)
+                {
                     using var memoryStreamJava = new MemoryStream();
                     model.FileJava.CopyTo(memoryStreamJava);
-                    var fileDataJava = memoryStreamJava.ToArray();
+                    fileDataJava = memoryStreamJava.ToArray();
+                }
 
+                if (model.TestFile != null && model.TestFile.Length > 0)
+                {
                     using var memoryStreamTestFile = new MemoryStream();
                     model.TestFile!.CopyTo(memoryStreamTestFile);
-                    var testFile = memoryStreamTestFile.ToArray();
+                    testFile = memoryStreamTestFile.ToArray();
+                }
 
+                if (model.TestFileJava != null && model.TestFileJava.Length > 0)
+                {
                     using var memoryStreamTestFileJava = new MemoryStream();
                     model.TestFileJava!.CopyTo(memoryStreamTestFileJava);
-                    var testFileJava = memoryStreamTestFileJava.ToArray();
-
-                    return Ok(new Response { Status = "200", Message = "Success" , Data = _services.Edit(model, fileData, fileDataJava, testFile, testFileJava) });
+                    testFileJava = memoryStreamTestFileJava.ToArray();
                 }
-                else
-                {
-                    return Ok(new Response { Status = "200", Message = "Success", Data = _services.Edit(model, null, null, null, null) });
-                }
+                
+                return Ok(new Response { Status = "200", Message = "Success" , Data = _services.Edit(model, fileData, fileDataJava, testFile, testFileJava) });
+                
             }
             catch (Exception ex)
             {
@@ -183,5 +194,21 @@ namespace backend.Controllers
             }
         }
 
+
+        [Authorize(Roles = UserRoles.Admin)]
+        [HttpGet("admin")]
+        public IActionResult ExercisesByAdmin(int? exerciseLevelId, int? exerciseTypeId, string? keyword, int? pageIndex, int? pageSize)
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                return Ok(_services.AllForAdmin(userId ?? "", exerciseLevelId, exerciseTypeId, keyword, pageIndex, pageSize));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Get exercise for admin fail: " + ex.Message);
+                return BadRequest("Fail to get exercise!");
+            }
+        }
     }
 }

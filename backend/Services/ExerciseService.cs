@@ -403,7 +403,7 @@ namespace backend.Services
             throw new NotImplementedException();
         }
 
-        public ExerciseResp Edit(ExerciseModel model, byte[]? file, byte[]? fileJava, byte[]? testFile, byte[]? testFileJava)
+        public ExerciseResp Edit(ExerciseModel model, byte[] file, byte[] fileJava, byte[] testFile, byte[] testFileJava)
         {
             // TODO: only level change then we find exercise level
             var exerciseLevels = _dbContext.ExerciseLevels.SingleOrDefault(item => item.Id == model.ExerciseLevelId);
@@ -424,19 +424,19 @@ namespace backend.Services
             exercise.Score = (exerciseLevels?.Score != null) ? exerciseLevels.Score : 0;
             
 
-            if (file != null)
+            if (file != null && file.Length > 0)
             {
                 exercise.RunFile = file;
             }
-            if (fileJava != null)
+            if (fileJava != null && fileJava.Length > 0)
             {
                 exercise.RunFileJava = fileJava;
             }
-            if (testFile != null)
+            if (testFile != null && testFile.Length > 0)
             {
                 exercise.TestFile = testFile;
             }
-            if (testFileJava != null)
+            if (testFileJava != null && testFileJava.Length > 0)
             {
                 exercise.TestFileJava = testFileJava;
             }
@@ -663,7 +663,7 @@ namespace backend.Services
         {
             int DEFAULT_TIME_LIMIT = 20000;
             var code = sourceCode.Code;
-            
+
 
             string compileResult = string.Empty;
             string executionResult = string.Empty;
@@ -691,9 +691,12 @@ namespace backend.Services
             for (int i = 0; i < 3; i++)
             {
 
-
                 try
                 {
+                    if (!CheckSourceCode(code))
+                    {
+                        throw new InvalidOperationException("Source code contain sensitive function name! Checkout the term of use page for details!");
+                    }
                     string program = string.Empty;
                     string arguments = string.Empty;
 
@@ -951,6 +954,43 @@ namespace backend.Services
         public string[] SystemForbidden()
         {
             return new string[] { "exec(", "process(", "pause(", "sleep(", "fork(" };
+        }
+
+        public List<ExerciseResponseAdmin> AllForAdmin(string userId, int? exerciseLevelId, int? exerciseTypeId, string? keyword, int? pageIndex = 1, int? pageSize = 5)
+        {
+            var exercises = _dbContext.Exercises.Include(item => item.ExerciseLevel)
+                    .Include(item => item.ExerciseType)
+                    .Include(item => item.Submissions)
+                    .Include(item => item.Ratings)
+                    .AsQueryable();
+
+            if (exerciseTypeId != null)
+            {
+                exercises = exercises.Where(item => item.ExerciseTypeId == exerciseTypeId);
+            }
+
+            if (exerciseLevelId != null)
+            {
+                exercises = exercises.Where(item => item.ExerciseLevelId == exerciseLevelId);
+            }
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                exercises = exercises.Where(item => item.Name.ToLower().Contains(keyword.ToLower()));
+            }
+
+            //var result = PaginatedList<Exercise>.Create(exercises, pageIndex, pageSize);
+            return exercises.Select(item => new ExerciseResponseAdmin
+            {
+                Id = item.Id,
+                Name = item.Name,
+                Description = item.Description,
+                ExerciseLevelId = item.ExerciseLevelId,
+                ExerciseTypeId = item.ExerciseTypeId,
+                ExerciseLevelName = item.ExerciseLevel.Name,
+                ExerciseTypeName = item.ExerciseType.Name,
+                SubmittedNumber = item.Submissions.Where(s => s.ExerciseId == item.Id && s.Status).ToList().Count,
+            }).ToList();
         }
     }
 }

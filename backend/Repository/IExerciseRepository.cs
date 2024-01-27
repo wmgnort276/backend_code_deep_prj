@@ -15,8 +15,11 @@ namespace backend.Repository
 
         string Submit(Guid id, string userId, SourceCode example);
 
-        ExerciseResp Edit(ExerciseModel model, byte[]? file, byte[]? fileJava, byte[]? testFile, byte[]? testFileJava);
+        ExerciseResp Edit(ExerciseModel model, byte[] file, byte[] fileJava, byte[] testFile, byte[] testFileJava);
 
         List<TestCaseResp> CheckTestCase(Guid exerciseId, SourceCode sourceCode);
+
+        List<ExerciseResponseAdmin> AllForAdmin(string userId, int? exerciseLevelId, int? exerciseTypeId, string? keyword, int? pageIndex = 1, int? pageSize = 5);
+
     }
 }
