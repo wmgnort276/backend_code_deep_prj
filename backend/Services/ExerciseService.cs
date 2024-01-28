@@ -94,10 +94,11 @@ namespace backend.Services
 
         public List<ExerciseResp> All(string userId, int? exerciseLevelId, int? exerciseTypeId, string? keyword, int? pageIndex = 1, int? pageSize = 5)
         {
-            var exercises = _dbContext.Exercises.Include(item => item.ExerciseLevel)
+            var exercises = _dbContext.Exercises.Include(item => item.ExerciseLevel )
                     .Include(item => item.ExerciseType)
                     .Include(item => item.Submissions)
-                    .AsQueryable();
+                    .AsQueryable()
+                    .Where(item => item.IsPublic);
 
             if (exerciseTypeId != null)
             {
@@ -943,17 +944,17 @@ namespace backend.Services
 
         public string[] FileActionForbidden()
         {
-            return new string[] { "remove(", "delete(" };
+            return new string[] { "remove(", "delete(", "mkdir(", "getAbsolutePath(", "GetFullPathName(" };
         }
 
         public string[] NetowrkForbidden()
         {
-            return new string[] { "socket(", "connect(" };
+            return new string[] { "socket(", "connect(", "Socket(" };
         }
 
         public string[] SystemForbidden()
         {
-            return new string[] { "exec(", "process(", "pause(", "sleep(", "fork(" };
+            return new string[] { "exec(", "execl(", "process(", "pause(", "sleep(", "fork(", "system(" };
         }
 
         public List<ExerciseResponseAdmin> AllForAdmin(string userId, int? exerciseLevelId, int? exerciseTypeId, string? keyword, int? pageIndex = 1, int? pageSize = 5)
@@ -990,7 +991,30 @@ namespace backend.Services
                 ExerciseLevelName = item.ExerciseLevel.Name,
                 ExerciseTypeName = item.ExerciseType.Name,
                 SubmittedNumber = item.Submissions.Where(s => s.ExerciseId == item.Id && s.Status).ToList().Count,
+                IsPublic = item.IsPublic,
             }).ToList();
+        }
+
+        public void Publish(Guid id)
+        {
+            var exerciseFound = _dbContext.Exercises.FirstOrDefault(item => item.Id == id);
+            if (exerciseFound != null)
+            {
+                exerciseFound.IsPublic = true;
+            }
+
+            _dbContext.SaveChanges();
+        }
+
+        public void UnPublish(Guid id)
+        {
+            var exerciseFound = _dbContext.Exercises.FirstOrDefault(item => item.Id == id);
+            if (exerciseFound != null)
+            {
+                exerciseFound.IsPublic = false;
+            }
+
+            _dbContext.SaveChanges();
         }
     }
 }

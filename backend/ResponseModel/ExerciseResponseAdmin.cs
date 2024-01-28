@@ -36,5 +36,7 @@ namespace backend.ResponseModel
         public int SubmittedNumber { get; set; }
 
         public float RatingValue { get; set; }
+
+        public bool IsPublic { get; set; }
     }
 }

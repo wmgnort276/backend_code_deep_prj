@@ -49,5 +49,7 @@ namespace backend.Data
 
         public virtual ICollection<Rating>? Ratings { get; set; }
 
+        public bool IsPublic { get; set; }
+
     }
 }

@@ -21,5 +21,9 @@ namespace backend.Repository
 
         List<ExerciseResponseAdmin> AllForAdmin(string userId, int? exerciseLevelId, int? exerciseTypeId, string? keyword, int? pageIndex = 1, int? pageSize = 5);
 
+        void Publish(Guid id);
+
+        void UnPublish(Guid id);
+
     }
 }

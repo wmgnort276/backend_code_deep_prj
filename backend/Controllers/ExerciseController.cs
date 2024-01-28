@@ -210,5 +210,47 @@ namespace backend.Controllers
                 return BadRequest("Fail to get exercise!");
             }
         }
+
+        [Authorize(Roles = UserRoles.Admin)]
+        [HttpPost("publish")]
+        public IActionResult Publish(Guid id)
+        {
+            try
+            {
+                _services.Publish(id);
+                return Ok(new Response
+                {
+                    Status = "200",
+                    Message = "Success",
+                    Data = true
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Update exercise fail: " + ex.Message);
+                return BadRequest("Fail to update exercise!");
+            }
+        }
+
+        [Authorize(Roles = UserRoles.Admin)]
+        [HttpPost("un-publish")]
+        public IActionResult UnPublish(Guid id)
+        {
+            try
+            {
+                _services.UnPublish(id);
+                return Ok(new Response
+                {
+                    Status = "200",
+                    Message = "Success",
+                    Data = true
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Update exercise fail: " + ex.Message);
+                return BadRequest("Fail to update exercise!");
+            }
+        }
     }
 }
